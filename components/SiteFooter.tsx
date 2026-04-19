@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoMark } from "./LogoMark";
 
 export function SiteFooter() {
   return (
@@ -6,7 +7,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-5 py-10 grid gap-8 md:grid-cols-3">
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span aria-hidden className="inline-block h-6 w-6 rounded-full bg-brand" />
+            <LogoMark size={24} />
             <span className="font-bold">3Dひろば</span>
           </div>
           <p className="text-sm text-ink-muted leading-relaxed">
