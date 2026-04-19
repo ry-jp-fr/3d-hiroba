@@ -32,7 +32,14 @@ export function Hero() {
           </div>
         </div>
         <div className="relative">
-          <div className="aspect-square rounded-3xl bg-gradient-to-br from-brand via-brand-light to-white shadow-xl" />
+          <div className="relative aspect-square rounded-3xl bg-gradient-to-br from-brand-light via-white to-paper shadow-xl overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/penta.png"
+              alt="3Dひろば公式キャラクター「3Dぺんた」"
+              className="absolute inset-0 w-full h-full object-contain p-6 drop-shadow-md"
+            />
+          </div>
           <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-lg p-4 text-sm">
             <p className="font-semibold">#3dひろば</p>
             <p className="text-ink-muted">で投稿をシェア</p>

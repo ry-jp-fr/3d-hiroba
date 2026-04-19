@@ -3,7 +3,10 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://3d-hiroba.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "3Dひろば | 3Dペンユーザーの作品ギャラリー",
     template: "%s | 3Dひろば",
