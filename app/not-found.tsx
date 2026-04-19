@@ -14,7 +14,7 @@ export default function NotFound() {
         href="/"
         className="mt-8 inline-flex items-center rounded-full bg-brand text-white px-5 py-2.5 font-semibold hover:bg-brand-dark"
       >
-        トップへ戻る
+        ひろばに戻る
       </Link>
     </div>
   );

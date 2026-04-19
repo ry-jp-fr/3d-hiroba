@@ -8,15 +8,15 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://3d-hiroba.vercel.ap
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "3Dひろば | 3Dペンユーザーの作品ギャラリー",
+    default: "3Dひろば | できた！が、つながる。",
     template: "%s | 3Dひろば",
   },
   description:
-    "3Dペンで生まれた作品を集めたギャラリーコミュニティサイト。ブランドに縛られず、すべての3Dペンユーザーのための場所です。",
+    "3Dひろばは、3Dペンで生まれた「できた！」を親子でみせあい、つながる参加型のひろば。初心者でも、はじめての一本からどうぞ。",
   openGraph: {
-    title: "3Dひろば",
+    title: "3Dひろば | できた！が、つながる。",
     description:
-      "3Dペンで生まれた作品を集めたギャラリーコミュニティサイト。",
+      "3Dペンで生まれた「できた！」を親子でみせあい、つながる参加型のひろば。",
     locale: "ja_JP",
     type: "website",
   },

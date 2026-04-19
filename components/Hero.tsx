@@ -6,28 +6,31 @@ export function Hero() {
       <div className="mx-auto max-w-6xl px-5 py-16 md:py-24 grid gap-10 md:grid-cols-2 items-center">
         <div>
           <p className="text-sm font-semibold text-brand-dark tracking-widest mb-4">
-            3D PEN COMMUNITY GALLERY
+            できた！って、うれしい。
           </p>
           <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-            3Dペンで<br />生まれた世界を、
-            <span className="text-brand">ひろば</span>で。
+            <span className="text-brand">できた！</span>が、
+            <br />
+            つながる。
           </h1>
           <p className="mt-6 text-ink-muted leading-relaxed">
-            「3Dひろば」は、3Dペンを楽しむすべてのユーザーのためのギャラリーコミュニティです。
-            ブランドを問わず、作品と出会い、作り手とつながれる場所を目指しています。
+            3Dひろばは、3Dペンで生まれた「できた！」を
+            親子でみせあい、ゆるやかにつながっていく参加型のひろばです。
+            はじめての一本でも、まだ途中でも、
+            「できてうれしい」を、そのまま持ってきてください。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="#gallery"
               className="inline-flex items-center rounded-full bg-brand text-white px-5 py-2.5 font-semibold hover:bg-brand-dark transition-colors"
             >
-              作品を見る
+              みんなの「できた！」をみる
             </Link>
             <Link
               href="/submit"
               className="inline-flex items-center rounded-full border border-ink/20 px-5 py-2.5 font-semibold hover:border-ink/60 transition-colors"
             >
-              作品を投稿する
+              「できた！」をみせよう
             </Link>
           </div>
         </div>
@@ -42,11 +45,11 @@ export function Hero() {
           </div>
           <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-lg p-4 text-sm">
             <p className="font-semibold">#3dひろば</p>
-            <p className="text-ink-muted">で投稿をシェア</p>
+            <p className="text-ink-muted">で「できた！」をシェア</p>
           </div>
           <div className="absolute -top-4 -right-4 bg-white rounded-2xl shadow-lg p-4 text-sm">
-            <p className="font-semibold">公式パートナー</p>
-            <p className="text-ink-muted">Scrib3D</p>
+            <p className="font-semibold">親子で楽しめる</p>
+            <p className="text-ink-muted">初心者歓迎</p>
           </div>
         </div>
       </div>
