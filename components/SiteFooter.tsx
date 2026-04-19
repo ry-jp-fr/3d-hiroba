@@ -10,18 +10,21 @@ export function SiteFooter() {
             <LogoMark size={24} />
             <span className="font-bold">3Dひろば</span>
           </div>
+          <p className="text-sm text-brand-dark font-semibold mb-2">
+            できた！が、つながる。
+          </p>
           <p className="text-sm text-ink-muted leading-relaxed">
-            3Dペンで作品を楽しむすべての人のためのコミュニティギャラリー。
-            ブランドに縛られず、自由に作品を見せ合える場所を目指しています。
+            3Dペンで生まれた「できた！」を、
+            親子でみせあい、つながる参加型のひろば。
           </p>
         </div>
         <div className="text-sm">
           <h3 className="font-semibold mb-3">サイトマップ</h3>
           <ul className="space-y-2 text-ink-muted">
-            <li><Link href="/" className="hover:text-ink">ギャラリー</Link></li>
+            <li><Link href="/" className="hover:text-ink">みんなの「できた！」</Link></li>
             <li><Link href="/about" className="hover:text-ink">3Dひろばとは</Link></li>
             <li><Link href="/partners" className="hover:text-ink">パートナー</Link></li>
-            <li><Link href="/submit" className="hover:text-ink">作品を投稿</Link></li>
+            <li><Link href="/submit" className="hover:text-ink">「できた！」をみせる</Link></li>
           </ul>
         </div>
         <div className="text-sm">
