@@ -30,17 +30,26 @@ export function PostCard({ post }: { post: GalleryPost }) {
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <span
-          className={`absolute top-3 left-3 text-xs font-semibold px-2 py-1 rounded-full ${sourceColor}`}
+          className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${sourceColor}`}
         >
           {sourceLabel}
         </span>
-      </a>
-      <div className="p-4 flex-1 flex flex-col gap-2">
-        {post.title && <h3 className="font-bold text-base">{post.title}</h3>}
-        {post.caption && (
-          <p className="text-sm text-ink-muted line-clamp-3">{post.caption}</p>
+        {post.author && (
+          <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
+            {post.author}
+          </span>
         )}
-        <div className="mt-auto pt-2 flex items-center justify-between text-xs text-ink-muted">
+      </a>
+      <div className="p-3 sm:p-4 flex-1 flex flex-col gap-2">
+        {post.title && (
+          <h3 className="font-bold text-sm sm:text-base">{post.title}</h3>
+        )}
+        {post.caption && (
+          <p className="text-xs sm:text-sm text-ink-muted line-clamp-2">
+            {post.caption}
+          </p>
+        )}
+        <div className="mt-auto pt-1 flex items-center justify-between text-[11px] text-ink-muted">
           <span>
             {post.author ? (
               post.authorUrl ? (
@@ -62,15 +71,30 @@ export function PostCard({ post }: { post: GalleryPost }) {
           <span>{formatDate(post.postedAt)}</span>
         </div>
         {post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 pt-2">
-            {post.tags.slice(0, 4).map((tag) => (
+          <div className="flex flex-wrap gap-1">
+            {post.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="text-[11px] text-ink-muted bg-paper px-2 py-0.5 rounded-full"
+                className="text-[10px] text-ink-muted bg-paper px-2 py-0.5 rounded-full"
               >
                 #{tag}
               </span>
             ))}
+          </div>
+        )}
+        {post.pentaComment && (
+          <div className="mt-2 flex items-start gap-2 bg-brand-light/70 rounded-2xl px-3 py-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/penta.png"
+              alt=""
+              aria-hidden
+              className="w-7 h-7 rounded-full object-contain bg-white flex-shrink-0 mt-0.5 shadow-sm"
+            />
+            <p className="text-[11px] sm:text-xs text-ink leading-relaxed">
+              <span className="font-bold text-brand-dark">3Dぺんた：</span>
+              {post.pentaComment}
+            </p>
           </div>
         )}
       </div>
