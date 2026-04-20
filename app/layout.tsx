@@ -3,7 +3,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://3d-hiroba.vercel.app";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://3d-hiroba.jp";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
