@@ -11,4 +11,5 @@ export type GalleryPost = {
   tags: string[];
   permalink?: string;
   postedAt?: string;
+  pentaComment?: string;
 };
