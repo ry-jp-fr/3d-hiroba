@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { put } from "@vercel/blob";
 import { promises as fs } from "fs";
 import path from "path";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -43,7 +44,10 @@ export async function POST(req: Request) {
 
   const contentType = req.headers.get("content-type") ?? "";
   if (!contentType.startsWith("multipart/form-data")) {
-    return NextResponse.json({ error: "invalid_content_type" }, { status: 400 });
+    return NextResponse.json(
+      { error: "invalid_content_type" },
+      { status: 400 },
+    );
   }
 
   const form = await req.formData();
@@ -68,18 +72,52 @@ export async function POST(req: Request) {
     );
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
   const ext = extForMime(mime);
   const filename = `${createId("upload")}.${ext}`;
-  const destDir = path.join(process.cwd(), "public", "uploads");
-  await fs.mkdir(destDir, { recursive: true });
-  await fs.writeFile(path.join(destDir, filename), buffer);
+  const mediaType = isVideo ? "video" : "image";
 
-  const url = `/uploads/${filename}`;
-  return NextResponse.json({
-    url,
-    mediaType: isVideo ? "video" : "image",
-    size: file.size,
-    mime,
-  });
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
+      const blob = await put(`uploads/${filename}`, file, {
+        access: "public",
+        contentType: mime,
+      });
+      return NextResponse.json({
+        url: blob.url,
+        mediaType,
+        size: file.size,
+        mime,
+      });
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error: "blob_upload_failed",
+          message: err instanceof Error ? err.message : "unknown",
+        },
+        { status: 500 },
+      );
+    }
+  }
+
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const destDir = path.join(process.cwd(), "public", "uploads");
+    await fs.mkdir(destDir, { recursive: true });
+    await fs.writeFile(path.join(destDir, filename), buffer);
+    return NextResponse.json({
+      url: `/uploads/${filename}`,
+      mediaType,
+      size: file.size,
+      mime,
+    });
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error: "fs_write_failed",
+        message: err instanceof Error ? err.message : "unknown",
+        hint: "Vercel ではファイルシステムに書き込めません。Vercel Blob を有効化してください (BLOB_READ_WRITE_TOKEN を設定)。",
+      },
+      { status: 500 },
+    );
+  }
 }

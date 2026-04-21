@@ -113,9 +113,17 @@ public/uploads/              # 手動アップロードの保存先
 1. GitHub に push
 2. Vercel で Import
 3. 上記環境変数を設定
-4. デプロイ
+4. **Vercel Blob ストレージを作成**（管理画面で永続化するため）
+   - Vercel ダッシュボーム → プロジェクト → **Storage** → **Create** → **Blob**
+   - 作成すると `BLOB_READ_WRITE_TOKEN` が自動で環境変数に追加されます
+5. デプロイ
 
-Vercel のファイルシステムはエフェメラルなので、本番運用では以下の検討が必要です:
+### データ永続化の仕組み
 
-- `data/curation.json` の永続化: Vercel KV や Postgres に移行するか、管理画面での変更を GitHub コミットに反映する運用にする
-- `public/uploads/` の永続化: Vercel Blob / S3 / Cloudinary に保存する
+`BLOB_READ_WRITE_TOKEN` が設定されている場合、管理画面の以下のデータは Vercel Blob に保存されます:
+
+- **`data/curation.json`** → Vercel Blob の `curation/curation.json`
+- **アップロード画像/動画** → Vercel Blob の `uploads/*`
+
+`BLOB_READ_WRITE_TOKEN` が未設定の場合（ローカル開発時など）は、従来通り
+`data/curation.json` と `public/uploads/` にファイルシステム経由で保存します。
