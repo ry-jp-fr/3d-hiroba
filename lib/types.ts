@@ -1,4 +1,6 @@
-export type PostSource = "manual" | "instagram";
+export type PostSource = "manual" | "instagram" | "instagram-url" | "upload";
+
+export type MediaType = "image" | "video";
 
 export type GalleryPost = {
   id: string;
@@ -6,7 +8,9 @@ export type GalleryPost = {
   title?: string;
   author?: string;
   authorUrl?: string;
+  mediaType?: MediaType;
   imageUrl: string;
+  videoUrl?: string;
   caption?: string;
   tags: string[];
   permalink?: string;

@@ -7,39 +7,87 @@ function formatDate(iso?: string) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
+const SOURCE_META: Record<
+  GalleryPost["source"],
+  { label: string; className: string }
+> = {
+  manual: {
+    label: "ピックアップ",
+    className: "bg-brand-light text-brand-dark",
+  },
+  instagram: {
+    label: "Instagram",
+    className: "bg-pink-100 text-pink-700",
+  },
+  "instagram-url": {
+    label: "Instagram",
+    className: "bg-pink-100 text-pink-700",
+  },
+  upload: {
+    label: "ピックアップ",
+    className: "bg-brand-light text-brand-dark",
+  },
+};
+
 export function PostCard({ post }: { post: GalleryPost }) {
-  const sourceLabel = post.source === "instagram" ? "Instagram" : "ピックアップ";
-  const sourceColor =
-    post.source === "instagram"
-      ? "bg-pink-100 text-pink-700"
-      : "bg-brand-light text-brand-dark";
+  const meta = SOURCE_META[post.source];
+  const isVideo = post.mediaType === "video" && post.videoUrl;
+
+  const mediaInner = isVideo ? (
+    <video
+      src={post.videoUrl}
+      poster={post.imageUrl}
+      controls
+      playsInline
+      preload="metadata"
+      className="h-full w-full object-cover"
+    />
+  ) : (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={post.imageUrl}
+      alt={post.title ?? post.caption ?? "3Dペン作品"}
+      loading="lazy"
+      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+    />
+  );
 
   return (
     <article className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-      <a
-        href={post.permalink ?? "#"}
-        target={post.permalink ? "_blank" : undefined}
-        rel={post.permalink ? "noopener noreferrer" : undefined}
-        className="block relative aspect-square overflow-hidden bg-paper"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={post.imageUrl}
-          alt={post.title ?? post.caption ?? "3Dペン作品"}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <span
-          className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${sourceColor}`}
-        >
-          {sourceLabel}
-        </span>
-        {post.author && (
-          <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
-            {post.author}
+      {isVideo ? (
+        <div className="block relative aspect-square overflow-hidden bg-paper">
+          {mediaInner}
+          <span
+            className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
+          >
+            {meta.label}
           </span>
-        )}
-      </a>
+          {post.author && (
+            <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
+              {post.author}
+            </span>
+          )}
+        </div>
+      ) : (
+        <a
+          href={post.permalink ?? "#"}
+          target={post.permalink ? "_blank" : undefined}
+          rel={post.permalink ? "noopener noreferrer" : undefined}
+          className="block relative aspect-square overflow-hidden bg-paper"
+        >
+          {mediaInner}
+          <span
+            className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
+          >
+            {meta.label}
+          </span>
+          {post.author && (
+            <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
+              {post.author}
+            </span>
+          )}
+        </a>
+      )}
       <div className="p-3 sm:p-4 flex-1 flex flex-col gap-2">
         {post.title && (
           <h3 className="font-bold text-sm sm:text-base">{post.title}</h3>

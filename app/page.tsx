@@ -5,8 +5,15 @@ import { getGalleryData } from "@/lib/posts";
 export const revalidate = 3600;
 
 export default async function HomePage() {
-  const { posts, manualCount, instagramCount, instagramConfigured } =
-    await getGalleryData();
+  const {
+    posts,
+    manualCount,
+    pickCount,
+    instagramCount,
+    instagramConfigured,
+  } = await getGalleryData();
+
+  const pickupTotal = manualCount + pickCount;
 
   return (
     <>
@@ -18,7 +25,7 @@ export default async function HomePage() {
               みんなの「できた！」
             </h2>
             <p className="text-sm text-ink-muted mt-2">
-              ピックアップ {manualCount} 件 / Instagram 連携{" "}
+              ピックアップ {pickupTotal} 件 / Instagram 連携{" "}
               {instagramConfigured ? `${instagramCount} 件` : "未接続"}
             </p>
           </div>
