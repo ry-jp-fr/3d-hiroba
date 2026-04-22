@@ -111,6 +111,28 @@ export async function PATCH(req: Request) {
   const unauth = await requireAdmin();
   if (unauth) return unauth;
   const body = await req.json().catch(() => null);
+
+  // 並び替え処理
+  if (Array.isArray(body?.order)) {
+    const order = body.order as string[];
+    const updated = await updateCuration((data) => {
+      const idSet = new Set(order);
+      const ordered = order
+        .map((id) => data.picks.find((p) => p.id === id))
+        .filter((p) => p !== undefined) as PickEntry[];
+
+      const remaining = data.picks.filter((p) => !idSet.has(p.id));
+
+      return {
+        ...data,
+        picks: [...ordered, ...remaining],
+      };
+    });
+    revalidatePath("/");
+    return NextResponse.json({ picks: updated.picks });
+  }
+
+  // 単一フィールド更新処理
   const id = String(body?.id ?? "");
   if (!id) {
     return NextResponse.json({ error: "id_required" }, { status: 400 });
