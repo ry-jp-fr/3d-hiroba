@@ -1,6 +1,17 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
+import {
+  DndContext,
+  DragEndEvent,
+  closestCenter,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { PickEntry } from "@/lib/curation";
 
 type FormState = {
@@ -36,6 +47,7 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [thumbFile, setThumbFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const [isReordering, setIsReordering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
@@ -124,6 +136,36 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
     }
     const json = (await res.json()) as { picks: PickEntry[] };
     setPicks(json.picks.filter((x) => x.method === "manual-upload"));
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = picks.findIndex((p) => p.id === active.id);
+      const newIndex = picks.findIndex((p) => p.id === over.id);
+
+      const newPicks = arrayMove(picks, oldIndex, newIndex);
+      setPicks(newPicks);
+
+      setIsReordering(true);
+      try {
+        const res = await fetch("/api/admin/picks/reorder", {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ order: newPicks.map((p) => p.id) }),
+        });
+        if (!res.ok) {
+          setPicks(picks);
+          setError("順序の保存に失敗しました");
+        }
+      } catch {
+        setPicks(picks);
+        setError("順序の保存に失敗しました");
+      } finally {
+        setIsReordering(false);
+      }
+    }
   }
 
   const isVideo = mediaFile?.type.startsWith("video/");
@@ -253,55 +295,64 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
             まだアップロードがありません。
           </p>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {picks.map((p) => (
-              <li
-                key={p.id}
-                className="flex gap-3 bg-white rounded-2xl border border-black/5 p-3"
-              >
-                <div className="w-20 h-20 rounded-xl bg-paper overflow-hidden flex-shrink-0">
-                  {p.mediaType === "video" ? (
-                    <video
-                      src={p.mediaUrl}
-                      poster={p.thumbnailUrl}
-                      className="w-full h-full object-cover"
-                      muted
-                    />
-                  ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={p.mediaUrl}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-sm truncate">
-                      {p.title ?? "(無題)"}
-                    </p>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-paper text-ink-muted">
-                      {p.mediaType === "video" ? "動画" : "画像"}
-                    </span>
-                  </div>
-                  <p className="text-xs text-ink-muted truncate">{p.author}</p>
-                  <p className="text-[11px] text-ink-muted mt-1 truncate">
-                    {p.mediaUrl}
-                  </p>
-                  <div className="mt-2 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => remove(p)}
-                      className="text-xs text-red-700 hover:bg-red-50 px-2 py-1 rounded-full"
-                    >
-                      削除
-                    </button>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <DndContext
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={picks.map((p) => p.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {picks.map((p) => (
+                  <SortableItem key={p.id} id={p.id}>
+                    <div className="flex gap-3 bg-white rounded-2xl border border-black/5 p-3">
+                      <div className="w-20 h-20 rounded-xl bg-paper overflow-hidden flex-shrink-0">
+                        {p.mediaType === "video" ? (
+                          <video
+                            src={p.mediaUrl}
+                            poster={p.thumbnailUrl}
+                            className="w-full h-full object-cover"
+                            muted
+                          />
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={p.mediaUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm truncate">
+                            {p.title ?? "(無題)"}
+                          </p>
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-paper text-ink-muted">
+                            {p.mediaType === "video" ? "動画" : "画像"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-ink-muted truncate">{p.author}</p>
+                        <p className="text-[11px] text-ink-muted mt-1 truncate">
+                          {p.mediaUrl}
+                        </p>
+                        <div className="mt-2 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => remove(p)}
+                            className="text-xs text-red-700 hover:bg-red-50 px-2 py-1 rounded-full"
+                          >
+                            削除
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </SortableItem>
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
         )}
       </section>
     </div>
@@ -338,4 +389,47 @@ function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function arrayMove<T>(array: T[], from: number, to: number): T[] {
+  const newArray = [...array];
+  const item = newArray.splice(from, 1)[0];
+  newArray.splice(to, 0, item);
+  return newArray;
+}
+
+interface SortableItemProps {
+  id: string;
+  children: React.ReactNode;
+}
+
+function SortableItem({ id, children }: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`cursor-grab active:cursor-grabbing ${
+        isDragging ? "scale-95" : ""
+      }`}
+    >
+      {children}
+    </li>
+  );
 }
