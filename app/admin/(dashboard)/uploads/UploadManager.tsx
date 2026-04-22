@@ -53,7 +53,8 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
     });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      throw new Error(j.error ?? "upload_failed");
+      const errorMsg = j.message ? `${j.error}: ${j.message}` : (j.error ?? "upload_failed");
+      throw new Error(errorMsg);
     }
     return (await res.json()) as UploadedMeta;
   }

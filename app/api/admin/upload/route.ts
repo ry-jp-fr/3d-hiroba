@@ -50,7 +50,19 @@ export async function POST(req: Request) {
     );
   }
 
-  const form = await req.formData();
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error: "form_parse_failed",
+        message: err instanceof Error ? err.message : "unknown",
+      },
+      { status: 400 },
+    );
+  }
+
   const file = form.get("file");
   if (!(file instanceof Blob)) {
     return NextResponse.json({ error: "file_required" }, { status: 400 });
@@ -78,7 +90,8 @@ export async function POST(req: Request) {
 
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
-      const blob = await put(`uploads/${filename}`, file, {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const blob = await put(`uploads/${filename}`, buffer, {
         access: "public",
         contentType: mime,
       });
@@ -89,10 +102,17 @@ export async function POST(req: Request) {
         mime,
       });
     } catch (err) {
+      let message: string;
+      if (err instanceof Error) {
+        message = err.message;
+      } else {
+        try { message = JSON.stringify(err); } catch { message = String(err); }
+      }
+      console.error("[upload] blob_upload_failed:", message, err);
       return NextResponse.json(
         {
           error: "blob_upload_failed",
-          message: err instanceof Error ? err.message : "unknown",
+          message,
         },
         { status: 500 },
       );
