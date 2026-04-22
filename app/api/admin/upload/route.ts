@@ -50,7 +50,19 @@ export async function POST(req: Request) {
     );
   }
 
-  const form = await req.formData();
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error: "form_parse_failed",
+        message: err instanceof Error ? err.message : "unknown",
+      },
+      { status: 400 },
+    );
+  }
+
   const file = form.get("file");
   if (!(file instanceof Blob)) {
     return NextResponse.json({ error: "file_required" }, { status: 400 });
