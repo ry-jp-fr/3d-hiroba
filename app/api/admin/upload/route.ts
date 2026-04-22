@@ -101,10 +101,12 @@ export async function POST(req: Request) {
         mime,
       });
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[upload] blob_upload_failed:", message, err);
       return NextResponse.json(
         {
           error: "blob_upload_failed",
-          message: err instanceof Error ? err.message : "unknown",
+          message,
         },
         { status: 500 },
       );
