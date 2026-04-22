@@ -114,21 +114,10 @@ async function seedBlobFromLocal(): Promise<CurationData> {
 }
 
 async function writeToBlob(data: CurationData): Promise<void> {
-  // Remove old copies before uploading new one so we don't accumulate blobs.
-  try {
-    const { blobs } = await list({ prefix: BLOB_PATHNAME });
-    for (const b of blobs) {
-      if (b.pathname === BLOB_PATHNAME) {
-        await del(b.url);
-      }
-    }
-  } catch {
-    // ignore — initial write
-  }
   await put(BLOB_PATHNAME, JSON.stringify(data, null, 2), {
     access: "public",
     contentType: "application/json",
-    addRandomSuffix: true,
+    allowOverwrite: true,
   });
 }
 
