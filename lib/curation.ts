@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { put, list, del } from "@vercel/blob";
+import seedManualPostsData from "@/data/manual-posts.json";
 
 export type HashtagEntry = {
   id: string;
@@ -32,6 +33,20 @@ export type PickEntry = {
 export type CurationData = {
   hashtags: HashtagEntry[];
   picks: PickEntry[];
+  seedManualPostsImported?: boolean;
+};
+
+type SeedManualPost = {
+  id: string;
+  title?: string;
+  author?: string;
+  authorUrl?: string;
+  imageUrl: string;
+  caption?: string;
+  tags?: string[];
+  permalink?: string;
+  postedAt?: string;
+  pentaComment?: string;
 };
 
 const dataDir = path.join(process.cwd(), "data");
@@ -64,6 +79,7 @@ async function readFromFile(): Promise<CurationData> {
     return {
       hashtags: parsed.hashtags ?? [],
       picks: parsed.picks ?? [],
+      seedManualPostsImported: parsed.seedManualPostsImported,
     };
   } catch {
     return { ...defaultData };
@@ -89,6 +105,7 @@ async function readFromBlob(): Promise<CurationData> {
     return {
       hashtags: parsed.hashtags ?? [],
       picks: parsed.picks ?? [],
+      seedManualPostsImported: parsed.seedManualPostsImported,
     };
   } catch {
     return { ...defaultData };
@@ -105,6 +122,7 @@ async function seedBlobFromLocal(): Promise<CurationData> {
     initial = {
       hashtags: parsed.hashtags ?? [],
       picks: parsed.picks ?? [],
+      seedManualPostsImported: parsed.seedManualPostsImported,
     };
   } catch {
     // fall through to default
@@ -121,9 +139,43 @@ async function writeToBlob(data: CurationData): Promise<void> {
   });
 }
 
+async function migrateSeedManualPosts(
+  data: CurationData,
+): Promise<CurationData> {
+  if (data.seedManualPostsImported) return data;
+
+  const seedPosts =
+    (seedManualPostsData as { posts?: SeedManualPost[] }).posts ?? [];
+  const seedPicks: PickEntry[] = seedPosts.map((p) => ({
+    id: `seed-manual-${p.id}`,
+    method: "manual-upload",
+    title: p.title,
+    author: p.author,
+    authorUrl: p.authorUrl,
+    mediaType: "image",
+    mediaUrl: p.imageUrl,
+    caption: p.caption,
+    tags: p.tags ?? [],
+    permalink: p.permalink,
+    postedAt: p.postedAt,
+    pentaComment: p.pentaComment,
+    addedAt: p.postedAt ?? new Date().toISOString(),
+  }));
+
+  const existingIds = new Set(data.picks.map((p) => p.id));
+  const additions = seedPicks.filter((p) => !existingIds.has(p.id));
+  const next: CurationData = {
+    ...data,
+    picks: [...data.picks, ...additions],
+    seedManualPostsImported: true,
+  };
+  await writeCuration(next);
+  return next;
+}
+
 export async function readCuration(): Promise<CurationData> {
-  if (useBlob()) return readFromBlob();
-  return readFromFile();
+  const raw = useBlob() ? await readFromBlob() : await readFromFile();
+  return migrateSeedManualPosts(raw);
 }
 
 export async function writeCuration(data: CurationData): Promise<void> {
