@@ -117,7 +117,7 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
         throw new Error(j.error ?? "create_failed");
       }
       const json = (await res.json()) as { picks: PickEntry[] };
-      setPicks(json.picks.filter((p) => p.method === "manual-upload"));
+      setPicks(json.picks);
       setForm(EMPTY);
       setMediaFile(null);
       setThumbFile(null);
@@ -144,7 +144,7 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
       return;
     }
     const json = (await res.json()) as { picks: PickEntry[] };
-    setPicks(json.picks.filter((x) => x.method === "manual-upload"));
+    setPicks(json.picks);
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -298,10 +298,10 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
       </form>
 
       <section>
-        <h2 className="font-bold text-lg mb-4">登録済み ({picks.length})</h2>
+        <h2 className="font-bold text-lg mb-4">すべての作品 ({picks.length})</h2>
         {picks.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-black/10 bg-white p-6 text-center text-sm text-ink-muted">
-            まだアップロードがありません。
+            まだ作品がありません。
           </p>
         ) : (
           <DndContext
@@ -341,6 +341,9 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
                           </p>
                           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-paper text-ink-muted">
                             {p.mediaType === "video" ? "動画" : "画像"}
+                          </span>
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                            {p.method === "manual-upload" ? "アップロード" : "Instagram URL"}
                           </span>
                         </div>
                         <p className="text-xs text-ink-muted truncate">{p.author}</p>

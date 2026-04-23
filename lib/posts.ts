@@ -21,17 +21,37 @@ function byDateDesc(a: GalleryPost, b: GalleryPost) {
   return db - da;
 }
 
+function seedManualKey(id: string): string | null {
+  // Extract the underlying seed-manual identifier so that a migrated
+  // pick ("pick:seed-manual-manual-001") and the original bundled manual
+  // post ("manual:manual-001") can be recognized as the same work.
+  const pickMatch = id.match(/^pick:seed-manual-(.+)$/);
+  if (pickMatch) return pickMatch[1];
+  const manualMatch = id.match(/^manual:(.+)$/);
+  if (manualMatch) return manualMatch[1];
+  return null;
+}
+
 export async function getGalleryData(): Promise<GalleryData> {
   const manual = getManualPosts();
   const picks = await getCurationPosts();
   const ig = await getInstagramPosts();
   const seen = new Set<string>();
-  const combined = [...picks, ...manual, ...ig.posts].filter((p) => {
-    if (seen.has(p.id)) return false;
+  const pickIds = new Set(picks.map((p) => p.id));
+  const pickSeedKeys = new Set(
+    picks
+      .map((p) => seedManualKey(p.id))
+      .filter((k): k is string => k !== null),
+  );
+  const unpicked = [...manual, ...ig.posts].filter((p) => {
+    if (seen.has(p.id) || pickIds.has(p.id)) return false;
+    const key = seedManualKey(p.id);
+    if (key && pickSeedKeys.has(key)) return false;
     seen.add(p.id);
     return true;
   });
-  combined.sort(byDateDesc);
+  unpicked.sort(byDateDesc);
+  const combined = [...picks, ...unpicked];
   const uploadCount = picks.filter((p) => p.source === "upload").length;
   const instagramUrlCount = picks.filter(
     (p) => p.source === "instagram-url",
