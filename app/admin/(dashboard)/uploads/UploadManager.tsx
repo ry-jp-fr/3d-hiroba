@@ -159,7 +159,7 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
 
       setIsReordering(true);
       try {
-        const res = await fetch("/api/admin/picks/reorder", {
+        const res = await fetch("/api/admin/picks", {
           method: "PATCH",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ order: newPicks.map((p) => p.id) }),
