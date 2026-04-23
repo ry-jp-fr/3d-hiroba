@@ -52,6 +52,8 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
   const [busy, setBusy] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<PickEntry> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
 
@@ -145,6 +147,58 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
     }
     const json = (await res.json()) as { picks: PickEntry[] };
     setPicks(json.picks);
+  }
+
+  function startEdit(p: PickEntry) {
+    setEditingId(p.id);
+    setEditForm({ ...p });
+    setError(null);
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editForm) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/picks", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: editingId,
+          updates: {
+            title: editForm.title,
+            author: editForm.author,
+            authorUrl: editForm.authorUrl,
+            caption: editForm.caption,
+            tags: editForm.tags,
+            postedAt: editForm.postedAt,
+            pentaComment: editForm.pentaComment,
+          },
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? "update_failed");
+      }
+      const json = (await res.json()) as { picks: PickEntry[] };
+      setPicks(json.picks);
+      setEditingId(null);
+      setEditForm(null);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? `編集に失敗しました: ${err.message}`
+          : "編集に失敗しました",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditForm(null);
+    setError(null);
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -350,7 +404,14 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
                         <p className="text-[11px] text-ink-muted mt-1 truncate">
                           {p.mediaUrl}
                         </p>
-                        <div className="mt-2 flex justify-end">
+                        <div className="mt-2 flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(p)}
+                            className="text-xs text-brand hover:bg-brand-light px-2 py-1 rounded-full"
+                          >
+                            編集
+                          </button>
                           <button
                             type="button"
                             onClick={() => remove(p)}
@@ -368,6 +429,112 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
           </DndContext>
         )}
       </section>
+
+      {editingId && editForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-xl">「{editForm.title ?? editForm.id}」を編集</h2>
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="text-ink-muted hover:text-ink text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="タイトル">
+                <input
+                  value={editForm.title ?? ""}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value || undefined })}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="投稿日">
+                <input
+                  type="date"
+                  value={editForm.postedAt ?? ""}
+                  onChange={(e) => setEditForm({ ...editForm, postedAt: e.target.value || undefined })}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="作者名">
+                <input
+                  value={editForm.author ?? ""}
+                  onChange={(e) => setEditForm({ ...editForm, author: e.target.value || undefined })}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="作者のリンク">
+                <input
+                  type="url"
+                  value={editForm.authorUrl ?? ""}
+                  onChange={(e) => setEditForm({ ...editForm, authorUrl: e.target.value || undefined })}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+
+            <Field label="キャプション">
+              <textarea
+                value={editForm.caption ?? ""}
+                onChange={(e) => setEditForm({ ...editForm, caption: e.target.value || undefined })}
+                rows={3}
+                className={inputCls}
+              />
+            </Field>
+
+            <Field label="タグ（カンマ区切り）">
+              <input
+                value={(editForm.tags ?? []).join(", ")}
+                onChange={(e) => {
+                  const tags = e.target.value
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter((t) => t.length > 0);
+                  setEditForm({ ...editForm, tags });
+                }}
+                className={inputCls}
+              />
+            </Field>
+
+            <Field label="3Dぺんたコメント">
+              <textarea
+                value={editForm.pentaComment ?? ""}
+                onChange={(e) => setEditForm({ ...editForm, pentaComment: e.target.value || undefined })}
+                rows={2}
+                className={inputCls}
+              />
+            </Field>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
+
+            <div className="flex justify-end gap-2 pt-4">
+              <button
+                type="button"
+                onClick={cancelEdit}
+                disabled={busy}
+                className="rounded-full border border-black/10 px-6 py-2 text-sm font-semibold hover:bg-black/5 disabled:opacity-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={saveEdit}
+                disabled={busy}
+                className="rounded-full bg-brand text-white font-semibold px-6 py-2 text-sm hover:bg-brand-dark disabled:opacity-50"
+              >
+                {busy ? "保存中..." : "保存"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
