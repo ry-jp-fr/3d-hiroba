@@ -91,10 +91,7 @@ export default async function AdminDashboardPage() {
             }
           />
           <Stat label="URL選定" value={gallery.instagramUrlCount} />
-          <Stat
-            label="手動アップロード"
-            value={gallery.uploadCount + gallery.manualCount}
-          />
+          <Stat label="手動アップロード" value={gallery.uploadCount} />
         </dl>
         {gallery.instagramError && (
           <p className="mt-4 text-xs text-red-600">
