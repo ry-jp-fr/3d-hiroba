@@ -92,24 +92,31 @@ async function writeToFile(data: CurationData): Promise<void> {
 }
 
 async function readFromBlob(): Promise<CurationData> {
-  try {
-    const { blobs } = await list({ prefix: BLOB_PATHNAME });
-    const found = blobs.find((b) => b.pathname === BLOB_PATHNAME);
-    if (!found) {
-      // Seed with default in Blob if nothing is there yet
-      return await seedBlobFromLocal();
-    }
-    const res = await fetch(found.url, { cache: "no-store" });
-    if (!res.ok) return { ...defaultData };
-    const parsed = (await res.json()) as Partial<CurationData>;
-    return {
-      hashtags: parsed.hashtags ?? [],
-      picks: parsed.picks ?? [],
-      seedManualPostsImported: parsed.seedManualPostsImported,
-    };
-  } catch {
-    return { ...defaultData };
+  const { blobs } = await list({ prefix: BLOB_PATHNAME });
+  const found = blobs.find((b) => b.pathname === BLOB_PATHNAME);
+  if (!found) {
+    // Blob doesn't exist yet — seed with bundled data/curation.json.
+    return await seedBlobFromLocal();
   }
+  // Append uploadedAt as a cache-buster so the Vercel Blob CDN doesn't serve
+  // stale content after an overwrite. Without this, a read-modify-write cycle
+  // can silently overwrite fresh data with a cached older version.
+  const version = found.uploadedAt
+    ? new Date(found.uploadedAt).getTime()
+    : Date.now();
+  const bustedUrl = `${found.url}${found.url.includes("?") ? "&" : "?"}v=${version}`;
+  const res = await fetch(bustedUrl, { cache: "no-store" });
+  if (!res.ok) {
+    // Do NOT fall back to default/empty data here. Returning empty would
+    // cause a subsequent write to destroy real data. Surface the error.
+    throw new Error(`blob_fetch_failed_${res.status}`);
+  }
+  const parsed = (await res.json()) as Partial<CurationData>;
+  return {
+    hashtags: parsed.hashtags ?? [],
+    picks: parsed.picks ?? [],
+    seedManualPostsImported: parsed.seedManualPostsImported,
+  };
 }
 
 async function seedBlobFromLocal(): Promise<CurationData> {
