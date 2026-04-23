@@ -140,7 +140,6 @@ export function PostCard({ post }: { post: GalleryPost }) {
               className="w-7 h-7 rounded-full object-contain bg-white flex-shrink-0 mt-0.5 shadow-sm"
             />
             <p className="text-[11px] sm:text-xs text-ink leading-relaxed">
-              <span className="font-bold text-brand-dark">3Dぺんた：</span>
               {post.pentaComment}
             </p>
           </div>
