@@ -92,44 +92,46 @@ export function PostCard({ post }: { post: GalleryPost }) {
         {post.title && (
           <h3 className="font-bold text-sm sm:text-base">{post.title}</h3>
         )}
-        {post.caption && (
-          <p className="text-xs sm:text-sm text-ink-muted line-clamp-2">
-            {post.caption}
-          </p>
-        )}
-        <div className="mt-auto pt-1 flex items-center justify-between text-[11px] text-ink-muted">
-          <span>
-            {post.author ? (
-              post.authorUrl ? (
-                <a
-                  href={post.authorUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-ink"
-                >
-                  {post.author}
-                </a>
+        <div className="hidden sm:block">
+          {post.caption && (
+            <p className="text-xs sm:text-sm text-ink-muted line-clamp-2">
+              {post.caption}
+            </p>
+          )}
+          <div className="mt-auto pt-1 flex items-center justify-between text-[11px] text-ink-muted">
+            <span>
+              {post.author ? (
+                post.authorUrl ? (
+                  <a
+                    href={post.authorUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-ink"
+                  >
+                    {post.author}
+                  </a>
+                ) : (
+                  post.author
+                )
               ) : (
-                post.author
-              )
-            ) : (
-              "—"
-            )}
-          </span>
-          <span>{formatDate(post.postedAt)}</span>
-        </div>
-        {post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {post.tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="text-[10px] text-ink-muted bg-paper px-2 py-0.5 rounded-full"
-              >
-                #{tag}
-              </span>
-            ))}
+                "—"
+              )}
+            </span>
+            <span>{formatDate(post.postedAt)}</span>
           </div>
-        )}
+          {post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {post.tags.slice(0, 3).map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[10px] text-ink-muted bg-paper px-2 py-0.5 rounded-full"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
         {post.pentaComment && (
           <div className="mt-2 flex items-start gap-2 bg-brand-light/70 rounded-2xl px-3 py-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
