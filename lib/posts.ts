@@ -26,12 +26,14 @@ export async function getGalleryData(): Promise<GalleryData> {
   const picks = await getCurationPosts();
   const ig = await getInstagramPosts();
   const seen = new Set<string>();
-  const combined = [...picks, ...manual, ...ig.posts].filter((p) => {
-    if (seen.has(p.id)) return false;
+  const pickIds = new Set(picks.map((p) => p.id));
+  const unpicked = [...manual, ...ig.posts].filter((p) => {
+    if (seen.has(p.id) || pickIds.has(p.id)) return false;
     seen.add(p.id);
     return true;
   });
-  combined.sort(byDateDesc);
+  unpicked.sort(byDateDesc);
+  const combined = [...picks, ...unpicked];
   const uploadCount = picks.filter((p) => p.source === "upload").length;
   const instagramUrlCount = picks.filter(
     (p) => p.source === "instagram-url",
