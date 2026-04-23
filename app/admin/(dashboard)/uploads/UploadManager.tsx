@@ -5,10 +5,13 @@ import {
   DndContext,
   DragEndEvent,
   closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -51,6 +54,12 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+  );
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -296,12 +305,13 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
           </p>
         ) : (
           <DndContext
+            sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
               items={picks.map((p) => p.id)}
-              strategy={verticalListSortingStrategy}
+              strategy={rectSortingStrategy}
             >
               <ul className="grid gap-3 sm:grid-cols-2">
                 {picks.map((p) => (
