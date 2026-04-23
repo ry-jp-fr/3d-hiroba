@@ -88,7 +88,7 @@ export function PostCard({ post }: { post: GalleryPost }) {
           )}
         </a>
       )}
-      <div className="p-3 sm:p-4 flex-1 flex flex-col gap-2">
+      <div className="p-2 sm:p-3 flex-1 flex flex-col gap-1.5">
         {post.title && (
           <h3 className="font-bold text-sm sm:text-base">{post.title}</h3>
         )}
@@ -133,13 +133,13 @@ export function PostCard({ post }: { post: GalleryPost }) {
           )}
         </div>
         {post.pentaComment && (
-          <div className="mt-2 flex items-start gap-2 bg-brand-light/70 rounded-2xl px-3 py-2">
+          <div className="flex items-center gap-2 bg-brand-light/70 rounded-2xl px-3 py-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/penta.png"
               alt=""
               aria-hidden
-              className="w-7 h-7 rounded-full object-contain bg-white flex-shrink-0 mt-0.5 shadow-sm"
+              className="w-[42px] h-[42px] rounded-full object-contain bg-white flex-shrink-0 shadow-sm"
             />
             <p className="text-[11px] sm:text-xs text-ink leading-relaxed">
               {post.pentaComment}
