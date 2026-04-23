@@ -88,7 +88,7 @@ export function PostCard({ post }: { post: GalleryPost }) {
           )}
         </a>
       )}
-      <div className="p-2 sm:p-3 flex-1 flex flex-col gap-1.5">
+      <div className="p-1 sm:p-2 flex-1 flex flex-col gap-1">
         {post.title && (
           <h3 className="font-bold text-sm sm:text-base">{post.title}</h3>
         )}
