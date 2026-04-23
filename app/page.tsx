@@ -1,6 +1,7 @@
 import { Hero } from "@/components/Hero";
 import { FilterableGallery } from "@/components/FilterTabs";
 import { getGalleryData } from "@/lib/posts";
+import { readCuration } from "@/lib/curation";
 
 export const revalidate = 3600;
 
@@ -12,12 +13,13 @@ export default async function HomePage() {
     instagramCount,
     instagramConfigured,
   } = await getGalleryData();
+  const curation = await readCuration();
 
   const pickupTotal = manualCount + pickCount;
 
   return (
     <>
-      <Hero />
+      <Hero config={curation.hero} />
       <section id="gallery" className="mx-auto max-w-6xl px-5 py-12">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
           <div>

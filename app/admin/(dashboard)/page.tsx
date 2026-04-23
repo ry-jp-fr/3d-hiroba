@@ -39,6 +39,13 @@ export default async function AdminDashboardPage() {
       stat: `${uploadCount} 件登録`,
       color: "bg-amber-50 border-amber-100",
     },
+    {
+      href: "/admin/hero",
+      title: "トップページを編集",
+      body: "トップの見出し・説明文・メイン画像 2 枚を変更できます。",
+      stat: "",
+      color: "bg-emerald-50 border-emerald-100",
+    },
   ];
 
   return (

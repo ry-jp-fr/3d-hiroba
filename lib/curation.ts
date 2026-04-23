@@ -30,10 +30,46 @@ export type PickEntry = {
   addedAt: string;
 };
 
+export type HeroPhoto = {
+  imageUrl: string;
+  author?: string;
+  alt?: string;
+};
+
+export type HeroConfig = {
+  eyebrow: string;
+  titleAccent: string;
+  titleRest: string;
+  description: string;
+  photo1: HeroPhoto;
+  photo2: HeroPhoto;
+};
+
+export const DEFAULT_HERO: HeroConfig = {
+  eyebrow: "できた！って、うれしい。",
+  titleAccent: "できた！",
+  titleRest: "が、\nつながる。",
+  description:
+    "3Dひろばは、3Dペンで生まれた「できた！」を 親子でみせあい、ゆるやかにつながっていく参加型のひろばです。はじめての一本でも、まだ途中でも、「できてうれしい」を、そのまま持ってきてください。",
+  photo1: {
+    imageUrl:
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=900&q=80",
+    author: "@hiroba_user_a",
+    alt: "ドラゴンの3Dペン作品",
+  },
+  photo2: {
+    imageUrl:
+      "https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?auto=format&fit=crop&w=900&q=80",
+    author: "@hiroba_user_e",
+    alt: "和風ランタンの3Dペン作品",
+  },
+};
+
 export type CurationData = {
   hashtags: HashtagEntry[];
   picks: PickEntry[];
   seedManualPostsImported?: boolean;
+  hero?: HeroConfig;
 };
 
 type SeedManualPost = {
@@ -80,6 +116,7 @@ async function readFromFile(): Promise<CurationData> {
       hashtags: parsed.hashtags ?? [],
       picks: parsed.picks ?? [],
       seedManualPostsImported: parsed.seedManualPostsImported,
+      hero: parsed.hero,
     };
   } catch {
     return { ...defaultData };
