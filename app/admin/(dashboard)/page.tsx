@@ -56,12 +56,11 @@ export default async function AdminDashboardPage() {
         </p>
         <h1 className="mt-2 text-3xl font-bold">作品管理ダッシュボード</h1>
         <p className="mt-3 text-sm text-ink-muted leading-relaxed">
-          3Dひろばに掲載する作品を、ハッシュタグ・URL・手動アップロードの3つの方法で選定できます。
-          編集内容はすぐにサイトに反映されます。
+          3Dひろばの掲載作品とトップページを管理できます。編集内容はすぐにサイトに反映されます。
         </p>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
           <Link
             key={card.href}
