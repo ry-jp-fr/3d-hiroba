@@ -152,8 +152,9 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
       }
     }
 
-    const json = (await fetch("/api/admin/picks")).then(r => r.json());
-    setPicks(json.picks.filter((p: PickEntry) => p.method === "instagram-url"));
+    const refreshRes = await fetch("/api/admin/picks");
+    const json = (await refreshRes.json()) as { picks: PickEntry[] };
+    setPicks(json.picks.filter((p) => p.method === "instagram-url"));
     setForm(EMPTY);
   }
 
