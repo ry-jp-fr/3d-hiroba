@@ -32,7 +32,13 @@ async function tryFetchAndExtract(url: string): Promise<string | null> {
       return null;
     }
     const html = await res.text();
-    return extractImageFromHtml(html);
+    const image = extractImageFromHtml(html);
+    if (!image) {
+      console.warn(`[og-image] no_image_found url=${url} html_length=${html.length}`);
+      // Log first 500 chars for debugging
+      console.debug(`[og-image] html_sample=${html.substring(0, 500)}`);
+    }
+    return image;
   } catch (err) {
     console.error(`[og-image] fetch_error url=${url}`, err);
     return null;

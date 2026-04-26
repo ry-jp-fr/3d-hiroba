@@ -91,14 +91,18 @@ export async function POST(req: Request) {
   let resolvedMediaUrl: string | undefined = mediaUrl || undefined;
   if (embedHtml && !mediaUrl && shortcode) {
     try {
+      console.log(`[picks] fetching OG image for permalink=${permalink}`);
       const ogUrl = await fetchInstagramOgImage(permalink);
       if (!ogUrl) {
+        console.error(`[picks] og_not_found for shortcode=${shortcode}`);
         return NextResponse.json(
-          { error: "og_not_found" },
+          { error: "og_not_found", shortcode },
           { status: 502 },
         );
       }
+      console.log(`[picks] og_image_found url=${ogUrl} shortcode=${shortcode}`);
       resolvedMediaUrl = await downloadAndStoreImage(ogUrl, shortcode);
+      console.log(`[picks] image_stored blob_url=${resolvedMediaUrl}`);
     } catch (err) {
       console.error("[picks] og_fetch_failed:", err);
       return NextResponse.json(
