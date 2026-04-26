@@ -48,20 +48,37 @@ export function PostCard({ post }: { post: GalleryPost }) {
             dangerouslySetInnerHTML={{ __html: post.embedHtml ?? "" }}
           />
         </div>
-        {post.pentaComment && (
-          <div className="m-2 flex items-center gap-2 bg-brand-light/70 rounded-2xl px-3 py-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/penta.png"
-              alt=""
-              aria-hidden
-              className="w-[42px] h-[42px] rounded-full object-contain bg-white flex-shrink-0 shadow-sm"
-            />
-            <p className="text-[11px] sm:text-xs text-ink leading-relaxed">
-              {post.pentaComment}
-            </p>
-          </div>
-        )}
+        <div className="p-1 sm:p-2 flex-1 flex flex-col gap-1">
+          {post.title && (
+            <h3 className="font-bold text-sm sm:text-base">{post.title}</h3>
+          )}
+          {post.tags.length > 0 && (
+            <div className="hidden sm:flex flex-wrap gap-1">
+              {post.tags.slice(0, 3).map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[10px] text-ink-muted bg-paper px-2 py-0.5 rounded-full"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+          {post.pentaComment && (
+            <div className="flex items-center gap-2 bg-brand-light/70 rounded-2xl px-3 py-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/penta.png"
+                alt=""
+                aria-hidden
+                className="w-[42px] h-[42px] rounded-full object-contain bg-white flex-shrink-0 shadow-sm"
+              />
+              <p className="text-[11px] sm:text-xs text-ink leading-relaxed">
+                {post.pentaComment}
+              </p>
+            </div>
+          )}
+        </div>
       </article>
     );
   }

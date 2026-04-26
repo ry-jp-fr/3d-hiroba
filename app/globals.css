@@ -16,3 +16,14 @@ body {
 a {
   color: inherit;
 }
+
+.instagram-embed-wrapper .instagram-media {
+  min-width: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.instagram-embed-wrapper iframe {
+  min-width: 0 !important;
+  width: 100% !important;
+}
