@@ -32,56 +32,6 @@ const SOURCE_META: Record<
 export function PostCard({ post }: { post: GalleryPost }) {
   const meta = SOURCE_META[post.source];
   const isVideo = post.mediaType === "video" && post.videoUrl;
-  const hasEmbed = post.embedHtml && post.embedHtml.length > 0;
-
-  if (hasEmbed) {
-    return (
-      <article className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-        <div className="relative">
-          <span
-            className={`absolute top-3 left-3 z-10 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
-          >
-            {meta.label}
-          </span>
-          <div
-            className="instagram-embed-wrapper"
-            dangerouslySetInnerHTML={{ __html: post.embedHtml ?? "" }}
-          />
-        </div>
-        <div className="p-1 sm:p-2 flex-1 flex flex-col gap-1">
-          {post.title && (
-            <h3 className="font-bold text-sm sm:text-base">{post.title}</h3>
-          )}
-          {post.tags.length > 0 && (
-            <div className="hidden sm:flex flex-wrap gap-1">
-              {post.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="text-[10px] text-ink-muted bg-paper px-2 py-0.5 rounded-full"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
-          {post.pentaComment && (
-            <div className="flex items-center gap-2 bg-brand-light/70 rounded-2xl px-3 py-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/penta.png"
-                alt=""
-                aria-hidden
-                className="w-[42px] h-[42px] rounded-full object-contain bg-white flex-shrink-0 shadow-sm"
-              />
-              <p className="text-[11px] sm:text-xs text-ink leading-relaxed">
-                {post.pentaComment}
-              </p>
-            </div>
-          )}
-        </div>
-      </article>
-    );
-  }
 
   const mediaInner = isVideo ? (
     <video

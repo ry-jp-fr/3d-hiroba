@@ -11,8 +11,13 @@ import {
   type PickMethod,
 } from "@/lib/curation";
 import { requireAdmin } from "@/lib/admin-auth";
+import {
+  fetchInstagramOgImage,
+  downloadAndStoreImage,
+} from "@/lib/og-image";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function parseTags(raw: unknown): string[] {
   if (Array.isArray(raw)) {
@@ -66,6 +71,7 @@ export async function POST(req: Request) {
   }
 
   let permalink = typeof body.permalink === "string" ? body.permalink.trim() : "";
+  let shortcode: string | null = null;
   if (method === "instagram-url") {
     if (!permalink) {
       return NextResponse.json(
@@ -73,10 +79,34 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    if (!extractInstagramShortcode(permalink)) {
+    shortcode = extractInstagramShortcode(permalink);
+    if (!shortcode) {
       return NextResponse.json(
         { error: "invalid_instagram_url" },
         { status: 400 },
+      );
+    }
+  }
+
+  let resolvedMediaUrl: string | undefined = mediaUrl || undefined;
+  if (embedHtml && !mediaUrl && shortcode) {
+    try {
+      const ogUrl = await fetchInstagramOgImage(permalink);
+      if (!ogUrl) {
+        return NextResponse.json(
+          { error: "og_not_found" },
+          { status: 502 },
+        );
+      }
+      resolvedMediaUrl = await downloadAndStoreImage(ogUrl, shortcode);
+    } catch (err) {
+      console.error("[picks] og_fetch_failed:", err);
+      return NextResponse.json(
+        {
+          error: "og_fetch_failed",
+          message: err instanceof Error ? err.message : "unknown",
+        },
+        { status: 502 },
       );
     }
   }
@@ -88,7 +118,7 @@ export async function POST(req: Request) {
     author: body.author ? String(body.author).slice(0, 80) : undefined,
     authorUrl: body.authorUrl ? String(body.authorUrl).slice(0, 300) : undefined,
     mediaType,
-    mediaUrl: mediaUrl || undefined,
+    mediaUrl: resolvedMediaUrl,
     thumbnailUrl: body.thumbnailUrl
       ? String(body.thumbnailUrl).slice(0, 500)
       : undefined,

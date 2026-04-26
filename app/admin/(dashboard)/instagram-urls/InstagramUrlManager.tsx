@@ -134,7 +134,6 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
           mediaType: "image",
           permalink: permalinkFromEmbed,
           embedHtml: sanitized,
-          thumbnailUrl: form.thumbnailUrl.trim() || undefined,
           title: form.title.trim() || undefined,
           author: form.author.trim() || undefined,
           authorUrl: form.authorUrl.trim() || undefined,
@@ -231,7 +230,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
             <Field
               label="埋め込みコード"
               required
-              hint="Instagram で投稿を開き「シェア」→「コードをコピー」で取得したHTMLコードを貼り付けてください"
+              hint="Instagram で投稿を開き「シェア」→「コードをコピー」で取得したコードを貼り付けてください。サムネ画像は自動取得されます。"
             >
               <textarea
                 value={form.embedHtml}
@@ -240,19 +239,6 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
                 placeholder='<blockquote class="instagram-media" data-instgrm-permalink="..."'
                 className={inputCls}
                 required
-              />
-            </Field>
-
-            <Field
-              label="サムネイル画像URL"
-              hint="ギャラリーに表示する画像。省略した場合はグレースケールプレースホルダーになります"
-            >
-              <input
-                type="url"
-                value={form.thumbnailUrl}
-                onChange={(e) => set("thumbnailUrl", e.target.value)}
-                placeholder="https://res.cloudinary.com/..../thumb.jpg"
-                className={inputCls}
               />
             </Field>
           </>
