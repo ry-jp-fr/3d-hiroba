@@ -22,6 +22,7 @@ function pickToPost(pick: PickEntry): GalleryPost {
     permalink: pick.permalink,
     postedAt: pick.postedAt ?? pick.addedAt,
     pentaComment: pick.pentaComment,
+    embedHtml: pick.embedHtml,
   };
 }
 

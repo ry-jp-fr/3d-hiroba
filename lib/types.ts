@@ -9,11 +9,12 @@ export type GalleryPost = {
   author?: string;
   authorUrl?: string;
   mediaType?: MediaType;
-  imageUrl: string;
+  imageUrl?: string;
   videoUrl?: string;
   caption?: string;
   tags: string[];
   permalink?: string;
   postedAt?: string;
   pentaComment?: string;
+  embedHtml?: string;
 };

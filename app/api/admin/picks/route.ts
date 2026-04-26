@@ -54,10 +54,13 @@ export async function POST(req: Request) {
     "video"
     ? "video"
     : "image";
+
+  const embedHtml = body.embedHtml ? String(body.embedHtml).trim() : "";
   const mediaUrl = String(body.mediaUrl ?? "").trim();
-  if (!mediaUrl) {
+
+  if (!embedHtml && !mediaUrl) {
     return NextResponse.json(
-      { error: "media_url_required" },
+      { error: "media_url_or_embed_required" },
       { status: 400 },
     );
   }
@@ -85,7 +88,7 @@ export async function POST(req: Request) {
     author: body.author ? String(body.author).slice(0, 80) : undefined,
     authorUrl: body.authorUrl ? String(body.authorUrl).slice(0, 300) : undefined,
     mediaType,
-    mediaUrl,
+    mediaUrl: mediaUrl || undefined,
     thumbnailUrl: body.thumbnailUrl
       ? String(body.thumbnailUrl).slice(0, 500)
       : undefined,
@@ -96,6 +99,7 @@ export async function POST(req: Request) {
     pentaComment: body.pentaComment
       ? String(body.pentaComment).slice(0, 400)
       : undefined,
+    embedHtml: embedHtml || undefined,
     addedAt: new Date().toISOString(),
   };
 
@@ -155,6 +159,8 @@ export async function PATCH(req: Request) {
         next.postedAt = String(updates.postedAt);
       if (updates.thumbnailUrl !== undefined)
         next.thumbnailUrl = String(updates.thumbnailUrl);
+      if (updates.embedHtml !== undefined)
+        next.embedHtml = String(updates.embedHtml);
       if (updates.tags !== undefined) next.tags = parseTags(updates.tags);
       return next;
     }),

@@ -20,13 +20,14 @@ export type PickEntry = {
   author?: string;
   authorUrl?: string;
   mediaType: PickMediaType;
-  mediaUrl: string;
+  mediaUrl?: string;
   thumbnailUrl?: string;
   caption?: string;
   tags: string[];
   permalink?: string;
   postedAt?: string;
   pentaComment?: string;
+  embedHtml?: string;
   addedAt: string;
 };
 

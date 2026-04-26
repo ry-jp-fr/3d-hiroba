@@ -1,4 +1,6 @@
+import { useState } from "react";
 import type { GalleryPost } from "@/lib/types";
+import { InstagramEmbedModal } from "./InstagramEmbedModal";
 
 function formatDate(iso?: string) {
   if (!iso) return "";
@@ -30,8 +32,10 @@ const SOURCE_META: Record<
 };
 
 export function PostCard({ post }: { post: GalleryPost }) {
+  const [showEmbed, setShowEmbed] = useState(false);
   const meta = SOURCE_META[post.source];
   const isVideo = post.mediaType === "video" && post.videoUrl;
+  const hasEmbed = post.embedHtml && post.embedHtml.length > 0;
 
   const mediaInner = isVideo ? (
     <video
@@ -42,7 +46,7 @@ export function PostCard({ post }: { post: GalleryPost }) {
       preload="metadata"
       className="h-full w-full object-cover"
     />
-  ) : (
+  ) : post.imageUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={post.imageUrl}
@@ -50,44 +54,67 @@ export function PostCard({ post }: { post: GalleryPost }) {
       loading="lazy"
       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
     />
+  ) : (
+    <div className="h-full w-full bg-paper" />
   );
 
   return (
-    <article className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-      {isVideo ? (
-        <div className="block relative aspect-square overflow-hidden bg-paper">
-          {mediaInner}
-          <span
-            className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
-          >
-            {meta.label}
-          </span>
-          {post.author && (
-            <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
-              {post.author}
+    <>
+      <article className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+        {isVideo ? (
+          <div className="block relative aspect-square overflow-hidden bg-paper">
+            {mediaInner}
+            <span
+              className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
+            >
+              {meta.label}
             </span>
-          )}
-        </div>
-      ) : (
-        <a
-          href={post.permalink ?? "#"}
-          target={post.permalink ? "_blank" : undefined}
-          rel={post.permalink ? "noopener noreferrer" : undefined}
-          className="block relative aspect-square overflow-hidden bg-paper"
-        >
-          {mediaInner}
-          <span
-            className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
+            {post.author && (
+              <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
+                {post.author}
+              </span>
+            )}
+          </div>
+        ) : hasEmbed ? (
+          <button
+            onClick={() => setShowEmbed(true)}
+            className="block relative aspect-square overflow-hidden bg-paper cursor-pointer hover:opacity-75"
           >
-            {meta.label}
-          </span>
-          {post.author && (
-            <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
-              {post.author}
+            {mediaInner}
+            <span
+              className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
+            >
+              {meta.label}
             </span>
-          )}
-        </a>
-      )}
+            {post.author && (
+              <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
+                {post.author}
+              </span>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-white text-sm font-semibold">詳細を見る</span>
+            </div>
+          </button>
+        ) : (
+          <a
+            href={post.permalink ?? "#"}
+            target={post.permalink ? "_blank" : undefined}
+            rel={post.permalink ? "noopener noreferrer" : undefined}
+            className="block relative aspect-square overflow-hidden bg-paper"
+          >
+            {mediaInner}
+            <span
+              className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
+            >
+              {meta.label}
+            </span>
+            {post.author && (
+              <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
+                {post.author}
+              </span>
+            )}
+          </a>
+        )}
       <div className="p-1 sm:p-2 flex-1 flex flex-col gap-1">
         {post.title && (
           <h3 className="font-bold text-sm sm:text-base">{post.title}</h3>
@@ -148,5 +175,13 @@ export function PostCard({ post }: { post: GalleryPost }) {
         )}
       </div>
     </article>
+      {hasEmbed && (
+        <InstagramEmbedModal
+          open={showEmbed}
+          onOpenChange={setShowEmbed}
+          embedHtml={post.embedHtml}
+        />
+      )}
+    </>
   );
 }
