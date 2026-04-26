@@ -1,6 +1,4 @@
-import { useState } from "react";
 import type { GalleryPost } from "@/lib/types";
-import { InstagramEmbedModal } from "./InstagramEmbedModal";
 
 function formatDate(iso?: string) {
   if (!iso) return "";
@@ -32,10 +30,41 @@ const SOURCE_META: Record<
 };
 
 export function PostCard({ post }: { post: GalleryPost }) {
-  const [showEmbed, setShowEmbed] = useState(false);
   const meta = SOURCE_META[post.source];
   const isVideo = post.mediaType === "video" && post.videoUrl;
   const hasEmbed = post.embedHtml && post.embedHtml.length > 0;
+
+  if (hasEmbed) {
+    return (
+      <article className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+        <div className="relative">
+          <span
+            className={`absolute top-3 left-3 z-10 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
+          >
+            {meta.label}
+          </span>
+          <div
+            className="instagram-embed-wrapper"
+            dangerouslySetInnerHTML={{ __html: post.embedHtml ?? "" }}
+          />
+        </div>
+        {post.pentaComment && (
+          <div className="m-2 flex items-center gap-2 bg-brand-light/70 rounded-2xl px-3 py-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/penta.png"
+              alt=""
+              aria-hidden
+              className="w-[42px] h-[42px] rounded-full object-contain bg-white flex-shrink-0 shadow-sm"
+            />
+            <p className="text-[11px] sm:text-xs text-ink leading-relaxed">
+              {post.pentaComment}
+            </p>
+          </div>
+        )}
+      </article>
+    );
+  }
 
   const mediaInner = isVideo ? (
     <video
@@ -59,62 +88,41 @@ export function PostCard({ post }: { post: GalleryPost }) {
   );
 
   return (
-    <>
-      <article className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-        {isVideo ? (
-          <div className="block relative aspect-square overflow-hidden bg-paper">
-            {mediaInner}
-            <span
-              className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
-            >
-              {meta.label}
-            </span>
-            {post.author && (
-              <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
-                {post.author}
-              </span>
-            )}
-          </div>
-        ) : hasEmbed ? (
-          <button
-            onClick={() => setShowEmbed(true)}
-            className="block relative aspect-square overflow-hidden bg-paper cursor-pointer hover:opacity-75"
+    <article className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+      {isVideo ? (
+        <div className="block relative aspect-square overflow-hidden bg-paper">
+          {mediaInner}
+          <span
+            className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
           >
-            {mediaInner}
-            <span
-              className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
-            >
-              {meta.label}
+            {meta.label}
+          </span>
+          {post.author && (
+            <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
+              {post.author}
             </span>
-            {post.author && (
-              <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
-                {post.author}
-              </span>
-            )}
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="text-white text-sm font-semibold">詳細を見る</span>
-            </div>
-          </button>
-        ) : (
-          <a
-            href={post.permalink ?? "#"}
-            target={post.permalink ? "_blank" : undefined}
-            rel={post.permalink ? "noopener noreferrer" : undefined}
-            className="block relative aspect-square overflow-hidden bg-paper"
+          )}
+        </div>
+      ) : (
+        <a
+          href={post.permalink ?? "#"}
+          target={post.permalink ? "_blank" : undefined}
+          rel={post.permalink ? "noopener noreferrer" : undefined}
+          className="block relative aspect-square overflow-hidden bg-paper"
+        >
+          {mediaInner}
+          <span
+            className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
           >
-            {mediaInner}
-            <span
-              className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
-            >
-              {meta.label}
+            {meta.label}
+          </span>
+          {post.author && (
+            <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
+              {post.author}
             </span>
-            {post.author && (
-              <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
-                {post.author}
-              </span>
-            )}
-          </a>
-        )}
+          )}
+        </a>
+      )}
       <div className="p-1 sm:p-2 flex-1 flex flex-col gap-1">
         {post.title && (
           <h3 className="font-bold text-sm sm:text-base">{post.title}</h3>
@@ -175,13 +183,5 @@ export function PostCard({ post }: { post: GalleryPost }) {
         )}
       </div>
     </article>
-      {hasEmbed && (
-        <InstagramEmbedModal
-          open={showEmbed}
-          onOpenChange={setShowEmbed}
-          embedHtml={post.embedHtml}
-        />
-      )}
-    </>
   );
 }

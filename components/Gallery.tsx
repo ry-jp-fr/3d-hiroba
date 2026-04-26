@@ -1,5 +1,6 @@
 import type { GalleryPost } from "@/lib/types";
 import { PostCard } from "./PostCard";
+import { InstagramEmbedLoader } from "./InstagramEmbedLoader";
 
 export function Gallery({ posts }: { posts: GalleryPost[] }) {
   if (posts.length === 0) {
@@ -9,11 +10,15 @@ export function Gallery({ posts }: { posts: GalleryPost[] }) {
       </div>
     );
   }
+  const hasEmbed = posts.some((p) => p.embedHtml && p.embedHtml.length > 0);
   return (
-    <div className="grid gap-1 sm:gap-3 grid-cols-2">
-      {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
-      ))}
-    </div>
+    <>
+      {hasEmbed && <InstagramEmbedLoader />}
+      <div className="grid gap-1 sm:gap-3 grid-cols-2">
+        {posts.map((post) => (
+          <PostCard key={post.id} post={post} />
+        ))}
+      </div>
+    </>
   );
 }
