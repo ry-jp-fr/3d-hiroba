@@ -4,8 +4,11 @@ import { FormEvent, useState } from "react";
 import type { PickEntry } from "@/lib/curation";
 
 type FormState = {
+  method: "url" | "embed";
   permalink: string;
   mediaUrl: string;
+  embedHtml: string;
+  thumbnailUrl: string;
   title: string;
   author: string;
   authorUrl: string;
@@ -16,8 +19,11 @@ type FormState = {
 };
 
 const EMPTY: FormState = {
+  method: "url",
   permalink: "",
   mediaUrl: "",
+  embedHtml: "",
+  thumbnailUrl: "",
   title: "",
   author: "",
   authorUrl: "",
@@ -30,6 +36,24 @@ const EMPTY: FormState = {
 function extractShortcode(url: string): string | null {
   const m = url.match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/);
   return m?.[1] ?? null;
+}
+
+function extractPermalinkFromEmbed(html: string): string | null {
+  const m = html.match(/data-instgrm-permalink="([^"]+)"/);
+  return m?.[1] ?? null;
+}
+
+function sanitizeEmbedHtml(html: string): string {
+  const parser = new DOMParser();
+  try {
+    const doc = parser.parseFromString(html, "text/html");
+    const blockquote = doc.querySelector("blockquote.instagram-media");
+    if (!blockquote) return "";
+    blockquote.querySelectorAll("script").forEach((s) => s.remove());
+    return blockquote.outerHTML;
+  } catch {
+    return "";
+  }
 }
 
 export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
@@ -45,44 +69,91 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!form.permalink.trim()) {
-      setError("投稿URLは必須です");
-      return;
+
+    if (form.method === "url") {
+      if (!form.permalink.trim()) {
+        setError("投稿URLは必須です");
+        return;
+      }
+      if (!extractShortcode(form.permalink)) {
+        setError("Instagramの投稿URLを入力してください");
+        return;
+      }
+      if (!form.mediaUrl.trim()) {
+        setError("カバー画像URLは必須です");
+        return;
+      }
+
+      setBusy(true);
+      const res = await fetch("/api/admin/picks", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          method: "instagram-url",
+          mediaType: "image",
+          permalink: form.permalink.trim(),
+          mediaUrl: form.mediaUrl.trim(),
+          title: form.title.trim() || undefined,
+          author: form.author.trim() || undefined,
+          authorUrl: form.authorUrl.trim() || undefined,
+          caption: form.caption.trim() || undefined,
+          tags: form.tags,
+          postedAt: form.postedAt || undefined,
+          pentaComment: form.pentaComment.trim() || undefined,
+        }),
+      });
+      setBusy(false);
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setError(`登録に失敗しました (${j.error ?? res.status})`);
+        return;
+      }
+    } else {
+      if (!form.embedHtml.trim()) {
+        setError("埋め込みコードは必須です");
+        return;
+      }
+      const sanitized = sanitizeEmbedHtml(form.embedHtml);
+      if (!sanitized) {
+        setError("埋め込みコードが無効です。Instagram のシェア → コードをコピーで取得したコードを貼り付けてください");
+        return;
+      }
+
+      const permalinkFromEmbed = extractPermalinkFromEmbed(sanitized);
+      if (!permalinkFromEmbed) {
+        setError("埋め込みコードから投稿URLが抽出できません");
+        return;
+      }
+
+      setBusy(true);
+      const res = await fetch("/api/admin/picks", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          method: "instagram-url",
+          mediaType: "image",
+          permalink: permalinkFromEmbed,
+          embedHtml: sanitized,
+          thumbnailUrl: form.thumbnailUrl.trim() || undefined,
+          title: form.title.trim() || undefined,
+          author: form.author.trim() || undefined,
+          authorUrl: form.authorUrl.trim() || undefined,
+          caption: form.caption.trim() || undefined,
+          tags: form.tags,
+          postedAt: form.postedAt || undefined,
+          pentaComment: form.pentaComment.trim() || undefined,
+        }),
+      });
+      setBusy(false);
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setError(`登録に失敗しました (${j.error ?? res.status})`);
+        return;
+      }
     }
-    if (!extractShortcode(form.permalink)) {
-      setError("Instagramの投稿URLを入力してください");
-      return;
-    }
-    if (!form.mediaUrl.trim()) {
-      setError("カバー画像URLは必須です");
-      return;
-    }
-    setBusy(true);
-    const res = await fetch("/api/admin/picks", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        method: "instagram-url",
-        mediaType: "image",
-        permalink: form.permalink.trim(),
-        mediaUrl: form.mediaUrl.trim(),
-        title: form.title.trim() || undefined,
-        author: form.author.trim() || undefined,
-        authorUrl: form.authorUrl.trim() || undefined,
-        caption: form.caption.trim() || undefined,
-        tags: form.tags,
-        postedAt: form.postedAt || undefined,
-        pentaComment: form.pentaComment.trim() || undefined,
-      }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setError(`登録に失敗しました (${j.error ?? res.status})`);
-      return;
-    }
-    const json = (await res.json()) as { picks: PickEntry[] };
-    setPicks(json.picks.filter((p) => p.method === "instagram-url"));
+
+    const json = (await fetch("/api/admin/picks")).then(r => r.json());
+    setPicks(json.picks.filter((p: PickEntry) => p.method === "instagram-url"));
     setForm(EMPTY);
   }
 
@@ -107,31 +178,84 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
       >
         <h2 className="font-bold text-lg">投稿を登録</h2>
 
-        <Field label="Instagram 投稿URL" required>
-          <input
-            type="url"
-            value={form.permalink}
-            onChange={(e) => set("permalink", e.target.value)}
-            placeholder="https://www.instagram.com/p/XXXXXXXX/"
-            className={inputCls}
-            required
-          />
-        </Field>
+        <div className="flex gap-2 p-3 bg-brand-light/30 rounded-xl">
+          <label className="flex items-center gap-2 cursor-pointer flex-1">
+            <input
+              type="radio"
+              checked={form.method === "url"}
+              onChange={() => setForm({ ...EMPTY, method: "url" })}
+            />
+            <span className="text-sm font-semibold">URLから登録</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer flex-1">
+            <input
+              type="radio"
+              checked={form.method === "embed"}
+              onChange={() => setForm({ ...EMPTY, method: "embed" })}
+            />
+            <span className="text-sm font-semibold">埋め込みコードから登録</span>
+          </label>
+        </div>
 
-        <Field
-          label="カバー画像URL"
-          required
-          hint="Instagramの画像は直リンクNGな場合があるため、別ホスト（Cloudinary等）にアップロードしたURLを推奨"
-        >
-          <input
-            type="url"
-            value={form.mediaUrl}
-            onChange={(e) => set("mediaUrl", e.target.value)}
-            placeholder="https://res.cloudinary.com/..../image.jpg"
-            className={inputCls}
-            required
-          />
-        </Field>
+        {form.method === "url" ? (
+          <>
+            <Field label="Instagram 投稿URL" required>
+              <input
+                type="url"
+                value={form.permalink}
+                onChange={(e) => set("permalink", e.target.value)}
+                placeholder="https://www.instagram.com/p/XXXXXXXX/"
+                className={inputCls}
+                required
+              />
+            </Field>
+
+            <Field
+              label="カバー画像URL"
+              required
+              hint="Instagramの画像は直リンクNGな場合があるため、別ホスト（Cloudinary等）にアップロードしたURLを推奨"
+            >
+              <input
+                type="url"
+                value={form.mediaUrl}
+                onChange={(e) => set("mediaUrl", e.target.value)}
+                placeholder="https://res.cloudinary.com/..../image.jpg"
+                className={inputCls}
+                required
+              />
+            </Field>
+          </>
+        ) : (
+          <>
+            <Field
+              label="埋め込みコード"
+              required
+              hint="Instagram で投稿を開き「シェア」→「コードをコピー」で取得したHTMLコードを貼り付けてください"
+            >
+              <textarea
+                value={form.embedHtml}
+                onChange={(e) => set("embedHtml", e.target.value)}
+                rows={4}
+                placeholder="<blockquote class=\"instagram-media\" data-instgrm-permalink=\"...\""
+                className={inputCls}
+                required
+              />
+            </Field>
+
+            <Field
+              label="サムネイル画像URL"
+              hint="ギャラリーに表示する画像。省略した場合はグレースケールプレースホルダーになります"
+            >
+              <input
+                type="url"
+                value={form.thumbnailUrl}
+                onChange={(e) => set("thumbnailUrl", e.target.value)}
+                placeholder="https://res.cloudinary.com/..../thumb.jpg"
+                className={inputCls}
+              />
+            </Field>
+          </>
+        )}
 
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="タイトル">
@@ -226,12 +350,16 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
                 key={p.id}
                 className="flex gap-3 bg-white rounded-2xl border border-black/5 p-3"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={p.mediaUrl}
-                  alt=""
-                  className="w-20 h-20 rounded-xl object-cover bg-paper flex-shrink-0"
-                />
+                {p.mediaUrl || p.thumbnailUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={p.mediaUrl || p.thumbnailUrl}
+                    alt=""
+                    className="w-20 h-20 rounded-xl object-cover bg-paper flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-xl bg-paper flex-shrink-0" />
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm truncate">
                     {p.title ?? "(無題)"}
@@ -244,7 +372,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
                       rel="noopener noreferrer"
                       className="mt-1 inline-block text-[11px] text-brand-dark hover:underline truncate max-w-full"
                     >
-                      {p.permalink}
+                      {p.embedHtml ? "埋め込みコード" : p.permalink}
                     </a>
                   )}
                   <div className="mt-2 flex justify-end">
