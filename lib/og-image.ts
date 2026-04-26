@@ -7,22 +7,56 @@ const USER_AGENT =
 export async function fetchInstagramOgImage(
   permalink: string,
 ): Promise<string | null> {
-  const res = await fetch(permalink, {
-    headers: {
-      "User-Agent": USER_AGENT,
-      Accept: "text/html,application/xhtml+xml",
-    },
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
+  const cleanUrl = permalink.replace(/\?.*$/, "").replace(/\/$/, "");
+  const embedUrl = `${cleanUrl}/embed/captioned/`;
 
-  const html = await res.text();
-  const match = html.match(
+  const fromEmbed = await tryFetchAndExtract(embedUrl);
+  if (fromEmbed) return fromEmbed;
+
+  return await tryFetchAndExtract(permalink);
+}
+
+async function tryFetchAndExtract(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": USER_AGENT,
+        Accept: "text/html,application/xhtml+xml",
+        "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
+      },
+      cache: "no-store",
+      redirect: "follow",
+    });
+    if (!res.ok) {
+      console.error(`[og-image] fetch_failed url=${url} status=${res.status}`);
+      return null;
+    }
+    const html = await res.text();
+    return extractImageFromHtml(html);
+  } catch (err) {
+    console.error(`[og-image] fetch_error url=${url}`, err);
+    return null;
+  }
+}
+
+function extractImageFromHtml(html: string): string | null {
+  const og = html.match(
     /<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i,
   );
-  if (!match) return null;
+  if (og) return decodeHtmlEntities(og[1]);
 
-  return decodeHtmlEntities(match[1]);
+  const embed = html.match(
+    /class=["']EmbeddedMediaImage["'][^>]*\ssrc=["']([^"']+)["']/i,
+  );
+  if (embed) return decodeHtmlEntities(embed[1]);
+
+  const display = html.match(/"display_url"\s*:\s*"([^"]+)"/);
+  if (display) return decodeJsonString(display[1]);
+
+  const thumb = html.match(/"thumbnail_src"\s*:\s*"([^"]+)"/);
+  if (thumb) return decodeJsonString(thumb[1]);
+
+  return null;
 }
 
 function decodeHtmlEntities(s: string): string {
@@ -32,6 +66,13 @@ function decodeHtmlEntities(s: string): string {
     .replace(/&#39;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">");
+}
+
+function decodeJsonString(s: string): string {
+  return s
+    .replace(/\\u0026/g, "&")
+    .replace(/\\\//g, "/")
+    .replace(/\\"/g, '"');
 }
 
 export async function downloadAndStoreImage(
