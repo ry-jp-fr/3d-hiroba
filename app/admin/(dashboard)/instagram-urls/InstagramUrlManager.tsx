@@ -236,7 +236,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
                 value={form.embedHtml}
                 onChange={(e) => set("embedHtml", e.target.value)}
                 rows={4}
-                placeholder="<blockquote class=\"instagram-media\" data-instgrm-permalink=\"...\""
+                placeholder='<blockquote class="instagram-media" data-instgrm-permalink="..."'
                 className={inputCls}
                 required
               />
