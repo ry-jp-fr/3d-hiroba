@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import type { PickEntry } from "@/lib/curation";
 
 type FormState = {
@@ -59,11 +59,44 @@ function sanitizeEmbedHtml(html: string): string {
 export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
   const [picks, setPicks] = useState<PickEntry[]>(initial);
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [busyLabel, setBusyLabel] = useState("登録中...");
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setThumbnailFile(file);
+    if (file) {
+      setThumbnailPreview(URL.createObjectURL(file));
+    } else {
+      setThumbnailPreview(null);
+    }
+  }
+
+  function resetForm() {
+    setForm(EMPTY);
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function uploadThumbnail(file: File): Promise<string> {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.error ?? `upload_failed_${res.status}`);
+    }
+    const { url } = await res.json() as { url: string };
+    return url;
   }
 
   async function onSubmit(e: FormEvent) {
@@ -85,6 +118,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
       }
 
       setBusy(true);
+      setBusyLabel("登録中...");
       const res = await fetch("/api/admin/picks", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -125,7 +159,23 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
         return;
       }
 
+      if (!thumbnailFile) {
+        setError("サムネイル画像をアップロードしてください");
+        return;
+      }
+
       setBusy(true);
+      setBusyLabel("画像をアップロード中...");
+      let uploadedUrl: string;
+      try {
+        uploadedUrl = await uploadThumbnail(thumbnailFile);
+      } catch (err) {
+        setBusy(false);
+        setError(`画像アップロードに失敗しました (${err instanceof Error ? err.message : "unknown"})`);
+        return;
+      }
+
+      setBusyLabel("投稿を登録中...");
       const res = await fetch("/api/admin/picks", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -134,6 +184,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
           mediaType: "image",
           permalink: permalinkFromEmbed,
           embedHtml: sanitized,
+          mediaUrl: uploadedUrl,
           title: form.title.trim() || undefined,
           author: form.author.trim() || undefined,
           authorUrl: form.authorUrl.trim() || undefined,
@@ -154,7 +205,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
     const refreshRes = await fetch("/api/admin/picks");
     const json = (await refreshRes.json()) as { picks: PickEntry[] };
     setPicks(json.picks.filter((p) => p.method === "instagram-url"));
-    setForm(EMPTY);
+    resetForm();
   }
 
   async function remove(p: PickEntry) {
@@ -183,7 +234,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
             <input
               type="radio"
               checked={form.method === "url"}
-              onChange={() => setForm({ ...EMPTY, method: "url" })}
+              onChange={() => { setForm({ ...EMPTY, method: "url" }); setThumbnailFile(null); setThumbnailPreview(null); }}
             />
             <span className="text-sm font-semibold">URLから登録</span>
           </label>
@@ -191,7 +242,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
             <input
               type="radio"
               checked={form.method === "embed"}
-              onChange={() => setForm({ ...EMPTY, method: "embed" })}
+              onChange={() => { setForm({ ...EMPTY, method: "embed" }); setThumbnailFile(null); setThumbnailPreview(null); }}
             />
             <span className="text-sm font-semibold">埋め込みコードから登録</span>
           </label>
@@ -230,7 +281,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
             <Field
               label="埋め込みコード"
               required
-              hint="Instagram で投稿を開き「シェア」→「コードをコピー」で取得したコードを貼り付けてください。サムネ画像は自動取得されます。"
+              hint="Instagram で投稿を開き「シェア」→「コードをコピー」で取得したコードを貼り付けてください"
             >
               <textarea
                 value={form.embedHtml}
@@ -240,6 +291,32 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
                 className={inputCls}
                 required
               />
+            </Field>
+
+            <Field
+              label="サムネイル画像"
+              required
+              hint="投稿のスクリーンショットや画像ファイルをアップロードしてください。Vercel Blob に保存されます"
+            >
+              <div className="flex items-start gap-3">
+                {thumbnailPreview && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={thumbnailPreview}
+                    alt="プレビュー"
+                    className="w-20 h-20 rounded-xl object-cover bg-paper flex-shrink-0 border border-black/10"
+                  />
+                )}
+                <div className="flex-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={onFileChange}
+                    className="block w-full text-sm text-ink-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-light file:text-brand-dark hover:file:bg-brand-light/80"
+                  />
+                </div>
+              </div>
             </Field>
           </>
         )}
@@ -319,7 +396,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
             disabled={busy}
             className="rounded-full bg-brand text-white font-semibold px-6 py-2 text-sm hover:bg-brand-dark disabled:opacity-50"
           >
-            {busy ? "登録中..." : "登録する"}
+            {busy ? busyLabel : "登録する"}
           </button>
         </div>
       </form>
