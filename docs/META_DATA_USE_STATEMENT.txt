@@ -117,7 +117,7 @@ Retention Policy:
 User Data Rights:
 - Users can see what posts are displayed publicly
 - Users can request deletion of their posts
-- Contact: ryo.yabuta@fermento-tokyo.com
+- Contact: help@scrib3dpen.jp
 - Response time: Within 30 days of request
 
 Deletion Process:
@@ -168,7 +168,7 @@ Privacy Policy:
 - Available in: Japanese & English
 
 Contact / Support:
-- Email: ryo.yabuta@fermento-tokyo.com
+- Email: help@scrib3dpen.jp
 - Form: https://3d-hiroba.vercel.app/contact
 - Response time: Within 7 business days
 
@@ -239,7 +239,7 @@ QUESTIONS & CONTACT
 
 For questions about this Data Use Statement:
 
-Email: ryo.yabuta@fermento-tokyo.com
+Email: help@scrib3dpen.jp
 Form: https://3d-hiroba.vercel.app/contact
 Website: https://3d-hiroba.vercel.app/privacy
 

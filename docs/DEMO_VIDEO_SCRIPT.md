@@ -185,7 +185,7 @@
 - "Images are stored securely in Vercel Blob"
 - "Data is never sold or shared"
 - "Users can request deletion anytime"
-- "Contact: ryo.yabuta@fermento-tokyo.com"
+- "Contact: help@scrib3dpen.jp"
 
 ---
 

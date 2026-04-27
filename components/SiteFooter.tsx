@@ -34,7 +34,7 @@ export function SiteFooter() {
           </p>
         </div>
         <div className="text-sm">
-          <h3 className="font-semibold mb-3">Legal</h3>
+          <h3 className="font-semibold mb-3">ポリシー</h3>
           <ul className="space-y-2 text-ink-muted">
             <li><Link href="/privacy" className="hover:text-ink">プライバシーポリシー</Link></li>
             <li><Link href="/contact" className="hover:text-ink">お問い合わせ</Link></li>

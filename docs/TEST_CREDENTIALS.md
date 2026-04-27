@@ -343,7 +343,7 @@ If you encounter any issues during testing:
    - HTTP status codes
 
 3. **Contact Support**:
-   - Email: ryo.yabuta@fermento-tokyo.com
+   - Email: help@scrib3dpen.jp
    - Include: App ID, error details, reproduction steps
 
 ---
@@ -385,14 +385,14 @@ A: Typically 3-7 business days, but may vary. Meta will email updates.
 A: Yes, we can reset the test environment for another review cycle.
 
 **Q: What if I find a bug?**  
-A: Document it and contact ryo.yabuta@fermento-tokyo.com with details.
+A: Document it and contact help@scrib3dpen.jp with details.
 
 ---
 
 ## Contact Information
 
 **For Technical Issues**:
-- Email: ryo.yabuta@fermento-tokyo.com
+- Email: help@scrib3dpen.jp
 - Response time: Within 24 hours
 
 **For Meta-Related Questions**:

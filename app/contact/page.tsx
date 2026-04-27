@@ -28,10 +28,10 @@ export default function ContactPage() {
             メールでのお問い合わせをご希望の場合は、以下のアドレスまでお気軽にご連絡ください。
           </p>
           <a
-            href="mailto:ryo.yabuta@fermento-tokyo.com"
+            href="mailto:help@scrib3dpen.jp"
             className="mt-4 inline-block text-blue-600 hover:underline"
           >
-            ryo.yabuta@fermento-tokyo.com
+            help@scrib3dpen.jp
           </a>
         </div>
       </div>

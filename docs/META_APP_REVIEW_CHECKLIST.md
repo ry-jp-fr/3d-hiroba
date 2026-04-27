@@ -21,7 +21,7 @@ This document outlines the configuration required in the Meta Developer Dashboar
   
 - [x] Contact Information Available: https://3d-hiroba.vercel.app/contact
   - Contact form for privacy questions
-  - Direct email: ryo.yabuta@fermento-tokyo.com
+  - Direct email: help@scrib3dpen.jp
   
 - [x] Terms of Service (Optional but recommended for future)
 
