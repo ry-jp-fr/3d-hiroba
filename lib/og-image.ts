@@ -39,10 +39,13 @@ async function tryFetchAndExtract(url: string): Promise<string | null> {
       const metaTags = html.match(/<meta[^>]+>/gi)?.slice(0, 20).join("\n") ?? "(no meta tags)";
       console.warn(`[og-image] meta_tags=\n${metaTags}`);
       // Look for any image-like URLs in the HTML
-      const imgRefs = html.match(/(?:cdn\.instagram|fbcdn|scontent)[^"'\s]+/g)?.slice(0, 5).join("\n") ?? "(no image refs)";
+      const imgRefs = html.match(/(?:cdn\.instagram|fbcdn|scontent)[^"'\s]+/g)?.slice(0, 10).join("\n") ?? "(no image refs)";
       console.warn(`[og-image] image_refs=\n${imgRefs}`);
-      // First 1000 chars
-      console.warn(`[og-image] html_head=${html.substring(0, 1000)}`);
+      // Look for fbcdn or scontent patterns more broadly
+      const cdnUrls = html.match(/https:\/\/[^"']*(?:fbcdn|scontent)[^"']*\.(jpg|jpeg|png|webp)/gi)?.slice(0, 5).join("\n") ?? "(no cdn urls)";
+      console.warn(`[og-image] cdn_urls=\n${cdnUrls}`);
+      // First 2000 chars
+      console.warn(`[og-image] html_head=${html.substring(0, 2000)}`);
     }
     return image;
   } catch (err) {
@@ -141,6 +144,47 @@ function extractImageFromHtml(html: string): string | null {
   if (linkImg) {
     console.log(`[og-image] matched=link_image_src`);
     return decodeHtmlEntities(linkImg[1]);
+  }
+
+  // Pattern 12: JSON "media_type":"image" with "image_url"
+  const mediaUrl = html.match(/"media_type"\s*:\s*"image"[^}]*?"image_url"\s*:\s*"([^"]+)"/);
+  if (mediaUrl) {
+    console.log(`[og-image] matched=media_image_url`);
+    return decodeJsonString(mediaUrl[1]);
+  }
+
+  // Pattern 13: Instagram edge_media_to_caption or similar node structure
+  // Look for carousel_media or image info in node structure
+  const nodeImage = html.match(/"node"\s*:\s*{[^}]*?"display_resources"[^}]*?"src"\s*:\s*"([^"]+)"/);
+  if (nodeImage) {
+    console.log(`[og-image] matched=node_display_resources`);
+    return decodeJsonString(nodeImage[1]);
+  }
+
+  // Pattern 14: fbcdn image URL (Instagram owned, used for cached images)
+  const fbcdnImage = html.match(/https?:\/\/[^"']*fbcdn\.net[^"']*\.(jpg|jpeg|png|webp)/i);
+  if (fbcdnImage) {
+    console.log(`[og-image] matched=fbcdn_url`);
+    return fbcdnImage[0];
+  }
+
+  // Pattern 15: scontent.cdninstagram URL (direct Instagram CDN)
+  const scontent = html.match(/https?:\/\/[^"']*scontent[^"']*\.(jpg|jpeg|png|webp)/i);
+  if (scontent) {
+    console.log(`[og-image] matched=scontent_url`);
+    return scontent[0];
+  }
+
+  // Pattern 16: Look in script tags for JSON with image data
+  const scriptMatch = html.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
+  if (scriptMatch) {
+    const scriptContent = scriptMatch[1];
+    // Try to find any fbcdn or scontent URL in the script
+    const urlInScript = scriptContent.match(/https?:\/\/[^"']*(?:fbcdn\.net|scontent[^"']*)\.[^"']*(?:jpg|jpeg|png|webp)/i);
+    if (urlInScript) {
+      console.log(`[og-image] matched=script_cdn_url`);
+      return urlInScript[0];
+    }
   }
 
   return null;
