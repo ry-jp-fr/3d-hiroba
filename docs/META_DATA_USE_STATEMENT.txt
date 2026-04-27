@@ -1,0 +1,255 @@
+META DATA USE STATEMENT FOR INSTAGRAM oEMBED API
+================================================
+
+Application: 3D Hiroba
+App ID: 26224957440539490
+Purpose: Instagram Post Gallery Display
+
+---
+
+OVERVIEW
+--------
+3D Hiroba is a community gallery platform for sharing 3D pen creations.
+The application uses the Instagram oEmbed API to display featured community
+posts in a unified gallery format. This statement describes how Instagram
+data is collected, used, and protected.
+
+---
+
+DATA COLLECTED
+--------------
+
+The following data is collected from Instagram via the oEmbed API endpoint
+(graph.facebook.com/v18.0/instagram_oembed):
+
+1. Post Metadata
+   - Post ID / Shortcode
+   - Author account name
+   - Author display name
+   - Post caption/description
+   - Post permalink/URL
+   - Post timestamp
+   - Post type (image, carousel, video)
+
+2. Media Thumbnails
+   - OG image (thumbnail_url from oEmbed response)
+   - Image dimensions
+   - Image URL / media file path
+
+3. Engagement Metadata (if available)
+   - Like count
+   - Comment count
+   - (Read-only, used for context only)
+
+---
+
+DATA USE & PURPOSE
+------------------
+
+PRIMARY USE: Community Gallery Display
+- Collect: Administrator selects Instagram post via URL
+- Fetch: App calls oEmbed API to retrieve post metadata
+- Store: Post data stored in database, thumbnail stored in Vercel Blob
+- Display: Post shown in community gallery on 3d-hiroba.vercel.app homepage
+- Duration: Post remains in gallery until administrator removes it
+
+SECONDARY USES:
+- Content Curation: Administrators review and manage featured posts
+- Analytics: Count posted items for community engagement metrics
+- Moderation: Verify post content and author
+
+NOT USED FOR:
+- Targeted advertising
+- User profiling or tracking
+- Selling or sharing with third parties
+- Training machine learning models
+- Re-identification of users
+- Combining with other datasets
+
+---
+
+DATA STORAGE & SECURITY
+-----------------------
+
+Storage Locations:
+1. Application Database (Firestore)
+   - Post metadata (author, caption, permalink)
+   - Stored indefinitely
+   - Encrypted at rest
+   - Firestore security rules restrict access to authenticated admins
+
+2. Cloud Image Storage (Vercel Blob)
+   - Thumbnail images only (no personal data)
+   - Stored indefinitely
+   - Public read access (for gallery display)
+   - Prevents image link expiry from Instagram CDN
+
+3. Server Cache
+   - oEmbed API responses cached for 1 hour
+   - Reduces API calls, improves performance
+   - Cleared on cache expiration
+   - No sensitive data in cache
+
+Access Control:
+- Read: Site administrators only (via httpOnly auth cookie)
+- Write: Site administrators only
+- Delete: Administrators can remove posts; users can request deletion via contact form
+- Public Display: Post thumbnails and captions visible to all site visitors
+
+Security Measures:
+- HTTPS only (enforced)
+- httpOnly, Secure, SameSite cookies for authentication
+- Server-side validation of all Instagram URLs
+- Regex extraction of shortcode (no HTML scraping)
+- No localStorage or session storage of sensitive data
+
+---
+
+DATA RETENTION & DELETION
+--------------------------
+
+Retention Policy:
+- Posts stored indefinitely as part of community gallery
+- Images stored indefinitely in Vercel Blob
+- User can request deletion via /contact form
+- Administrator can delete posts from dashboard anytime
+
+User Data Rights:
+- Users can see what posts are displayed publicly
+- Users can request deletion of their posts
+- Contact: help@scrib3dpen.jp
+- Response time: Within 30 days of request
+
+Deletion Process:
+1. User submits request via /contact form
+2. Administrator reviews request
+3. If approved, post is removed from gallery
+4. Database entry deleted
+5. Image file deleted from Vercel Blob (optional, cleanup)
+6. Confirmation sent to user
+
+---
+
+THIRD-PARTY SHARING
+--------------------
+
+NO Third-Party Access:
+- Data is NOT shared with any third parties
+- Data is NOT sold or transferred
+- Data is NOT used by external services (except Instagram API for read-only oEmbed)
+
+Partners & Integrations:
+- Vercel: Hosts the application (Blob storage)
+  - Vercel acts as data processor, not controller
+  - Data processing agreement in place via Vercel Terms
+- Firestore (Google Cloud): Database storage
+  - Google acts as data processor
+  - Data processing agreement in place via Google Cloud Terms
+- Instagram / Facebook: oEmbed API
+  - Read-only access for public post metadata only
+  - No personal data sent to Meta (only post URL)
+
+---
+
+COMPLIANCE & POLICIES
+---------------------
+
+Compliance with:
+✓ Instagram Platform Policy
+✓ Facebook Data Use Restrictions
+✓ GDPR (where applicable)
+✓ CCPA (where applicable)
+✓ Meta Platform Terms
+✓ Instagram Graph API Terms of Service
+
+Privacy Policy:
+- Published at: https://3d-hiroba.vercel.app/privacy
+- Updated: Regularly (users notified of changes)
+- Available in: Japanese & English
+
+Contact / Support:
+- Email: help@scrib3dpen.jp
+- Form: https://3d-hiroba.vercel.app/contact
+- Response time: Within 7 business days
+
+---
+
+API USAGE & LIMITS
+------------------
+
+oEmbed API Endpoint:
+- https://graph.facebook.com/v18.0/instagram_oembed
+- Method: GET with App Token (FACEBOOK_APP_ID|FACEBOOK_APP_SECRET)
+- Rate Limit: Standard Meta limits (currently 200 req/hr or higher for approved apps)
+
+Typical Usage Pattern:
+1. Admin submits Instagram URL in management interface
+2. Server calls oEmbed API once to fetch metadata
+3. Thumbnail cached for 1 hour
+4. Post displayed in gallery
+5. No further API calls unless post is re-registered
+
+Monitoring:
+- API usage tracked in Meta Dashboard
+- Alerts set if approaching rate limits
+- Fallback to manual image upload if API fails
+
+---
+
+CHILDREN & MINORS
+-----------------
+
+Age Restriction:
+- Site targets primarily parents and children 5-14 years old
+- Gallery displays 3D pen creations (safe for all ages)
+- No Instagram account required to view gallery
+- Admin console restricted to 18+ users only
+
+Data Protection:
+- No personal data collected from children
+- Only publicly posted content from Instagram
+- No targeting or profiling of minors
+- Parental content moderation performed by admins
+
+---
+
+POLICY CHANGES & UPDATES
+------------------------
+
+Change Management:
+- Changes to this statement will be announced on website
+- Email notification sent to registered admins
+- Privacy policy updated simultaneously
+- Effective date at least 30 days after announcement
+
+Notification:
+- Users notified via website banner
+- Direct email to admin contacts
+- Posted in contact page
+
+Versioning:
+- Current version: 2.0
+- Last updated: 2026-04-27
+- Next review: 2026-10-27 (6 months)
+
+---
+
+QUESTIONS & CONTACT
+-------------------
+
+For questions about this Data Use Statement:
+
+Email: help@scrib3dpen.jp
+Form: https://3d-hiroba.vercel.app/contact
+Website: https://3d-hiroba.vercel.app/privacy
+
+For Meta-specific questions:
+- Meta Developer Portal: https://developers.facebook.com/docs/instagram-api/
+- Meta Data Use Policy: https://www.facebook.com/policies/data-use/
+
+---
+
+Document Version: 2.0
+Last Updated: 2026-04-27
+Effective Date: 2026-04-27
+Next Review: 2026-10-27
