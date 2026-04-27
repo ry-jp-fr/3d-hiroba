@@ -4,7 +4,7 @@ import { LogoMark } from "./LogoMark";
 export function SiteFooter() {
   return (
     <footer className="border-t border-black/5 bg-white">
-      <div className="mx-auto max-w-6xl px-5 py-10 grid gap-8 md:grid-cols-3">
+      <div className="mx-auto max-w-6xl px-5 py-10 grid gap-8 md:grid-cols-4">
         <div>
           <div className="flex items-center gap-2 mb-3">
             <LogoMark size={24} />
@@ -32,6 +32,13 @@ export function SiteFooter() {
           <p className="text-ink-muted leading-relaxed">
             Scrib3D（スクリブ3D）は3Dひろばの公式パートナーです。
           </p>
+        </div>
+        <div className="text-sm">
+          <h3 className="font-semibold mb-3">Legal</h3>
+          <ul className="space-y-2 text-ink-muted">
+            <li><Link href="/privacy" className="hover:text-ink">プライバシーポリシー</Link></li>
+            <li><Link href="/contact" className="hover:text-ink">お問い合わせ</Link></li>
+          </ul>
         </div>
       </div>
       <div className="border-t border-black/5 py-4 text-center text-xs text-ink-muted">
