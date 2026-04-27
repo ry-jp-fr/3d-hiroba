@@ -35,8 +35,14 @@ async function tryFetchAndExtract(url: string): Promise<string | null> {
     const image = extractImageFromHtml(html);
     if (!image) {
       console.warn(`[og-image] no_image_found url=${url} html_length=${html.length}`);
-      // Log first 500 chars for debugging
-      console.debug(`[og-image] html_sample=${html.substring(0, 500)}`);
+      // Log meta tags and key snippets for debugging
+      const metaTags = html.match(/<meta[^>]+>/gi)?.slice(0, 20).join("\n") ?? "(no meta tags)";
+      console.warn(`[og-image] meta_tags=\n${metaTags}`);
+      // Look for any image-like URLs in the HTML
+      const imgRefs = html.match(/(?:cdn\.instagram|fbcdn|scontent)[^"'\s]+/g)?.slice(0, 5).join("\n") ?? "(no image refs)";
+      console.warn(`[og-image] image_refs=\n${imgRefs}`);
+      // First 1000 chars
+      console.warn(`[og-image] html_head=${html.substring(0, 1000)}`);
     }
     return image;
   } catch (err) {
@@ -46,21 +52,96 @@ async function tryFetchAndExtract(url: string): Promise<string | null> {
 }
 
 function extractImageFromHtml(html: string): string | null {
-  const og = html.match(
+  // Pattern 1: og:image (property before content)
+  const og1 = html.match(
     /<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i,
   );
-  if (og) return decodeHtmlEntities(og[1]);
+  if (og1) {
+    console.log(`[og-image] matched=og:image_v1`);
+    return decodeHtmlEntities(og1[1]);
+  }
 
+  // Pattern 2: og:image (content before property - reversed attribute order)
+  const og2 = html.match(
+    /<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i,
+  );
+  if (og2) {
+    console.log(`[og-image] matched=og:image_v2`);
+    return decodeHtmlEntities(og2[1]);
+  }
+
+  // Pattern 3: og:image:secure_url
+  const ogSecure = html.match(
+    /<meta\s+property=["']og:image:secure_url["']\s+content=["']([^"']+)["']/i,
+  );
+  if (ogSecure) {
+    console.log(`[og-image] matched=og:image:secure_url`);
+    return decodeHtmlEntities(ogSecure[1]);
+  }
+
+  // Pattern 4: twitter:image
+  const twitter = html.match(
+    /<meta\s+(?:name|property)=["']twitter:image["']\s+content=["']([^"']+)["']/i,
+  );
+  if (twitter) {
+    console.log(`[og-image] matched=twitter:image`);
+    return decodeHtmlEntities(twitter[1]);
+  }
+
+  // Pattern 5: EmbeddedMediaImage class
   const embed = html.match(
     /class=["']EmbeddedMediaImage["'][^>]*\ssrc=["']([^"']+)["']/i,
   );
-  if (embed) return decodeHtmlEntities(embed[1]);
+  if (embed) {
+    console.log(`[og-image] matched=EmbeddedMediaImage`);
+    return decodeHtmlEntities(embed[1]);
+  }
 
+  // Pattern 6: video poster (for Reels)
+  const poster = html.match(
+    /<video[^>]*\sposter=["']([^"']+)["']/i,
+  );
+  if (poster) {
+    console.log(`[og-image] matched=video_poster`);
+    return decodeHtmlEntities(poster[1]);
+  }
+
+  // Pattern 7: JSON display_url
   const display = html.match(/"display_url"\s*:\s*"([^"]+)"/);
-  if (display) return decodeJsonString(display[1]);
+  if (display) {
+    console.log(`[og-image] matched=display_url`);
+    return decodeJsonString(display[1]);
+  }
 
+  // Pattern 8: JSON thumbnail_src
   const thumb = html.match(/"thumbnail_src"\s*:\s*"([^"]+)"/);
-  if (thumb) return decodeJsonString(thumb[1]);
+  if (thumb) {
+    console.log(`[og-image] matched=thumbnail_src`);
+    return decodeJsonString(thumb[1]);
+  }
+
+  // Pattern 9: JSON thumbnail_url (oEmbed style)
+  const thumbUrl = html.match(/"thumbnail_url"\s*:\s*"([^"]+)"/);
+  if (thumbUrl) {
+    console.log(`[og-image] matched=thumbnail_url`);
+    return decodeJsonString(thumbUrl[1]);
+  }
+
+  // Pattern 10: JSON image_versions2 (Instagram internal format)
+  const imgVer = html.match(/"image_versions2"[^}]*?"url"\s*:\s*"([^"]+)"/);
+  if (imgVer) {
+    console.log(`[og-image] matched=image_versions2`);
+    return decodeJsonString(imgVer[1]);
+  }
+
+  // Pattern 11: link rel="image_src"
+  const linkImg = html.match(
+    /<link\s+rel=["']image_src["']\s+href=["']([^"']+)["']/i,
+  );
+  if (linkImg) {
+    console.log(`[og-image] matched=link_image_src`);
+    return decodeHtmlEntities(linkImg[1]);
+  }
 
   return null;
 }
