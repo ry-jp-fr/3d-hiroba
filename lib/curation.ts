@@ -154,6 +154,7 @@ async function readFromBlob(): Promise<CurationData> {
     hashtags: parsed.hashtags ?? [],
     picks: parsed.picks ?? [],
     seedManualPostsImported: parsed.seedManualPostsImported,
+    hero: parsed.hero,
   };
 }
 
@@ -168,6 +169,7 @@ async function seedBlobFromLocal(): Promise<CurationData> {
       hashtags: parsed.hashtags ?? [],
       picks: parsed.picks ?? [],
       seedManualPostsImported: parsed.seedManualPostsImported,
+      hero: parsed.hero,
     };
   } catch {
     // fall through to default
