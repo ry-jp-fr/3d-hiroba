@@ -235,7 +235,7 @@ function PhotoEditor({
           />
         </Field>
         <div className="grid sm:grid-cols-2 gap-3">
-          <Field label="表示する作者名（例: @hiroba_user_a）">
+          <Field label="表示する作者名（任意）" hint="例: @hiroba_user_a">
             <input
               value={photo.author ?? ""}
               onChange={(e) =>
