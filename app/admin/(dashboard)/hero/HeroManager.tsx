@@ -238,16 +238,14 @@ function PhotoEditor({
           <Field label="表示する作者名（任意）" hint="例: @hiroba_user_a">
             <input
               value={photo.author ?? ""}
-              onChange={(e) =>
-                onChange({ author: e.target.value || undefined })
-              }
+              onChange={(e) => onChange({ author: e.target.value })}
               className={inputCls}
             />
           </Field>
           <Field label="代替テキスト (alt)">
             <input
               value={photo.alt ?? ""}
-              onChange={(e) => onChange({ alt: e.target.value || undefined })}
+              onChange={(e) => onChange({ alt: e.target.value })}
               className={inputCls}
             />
           </Field>
