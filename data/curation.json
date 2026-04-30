@@ -7,5 +7,116 @@
       "addedAt": "2026-04-21T00:00:00.000Z"
     }
   ],
-  "picks": []
+  "picks": [
+    {
+      "id": "seed-manual-manual-001",
+      "method": "manual-upload",
+      "title": "ドラゴンの立体造形",
+      "author": "@hiroba_user_a",
+      "authorUrl": "https://www.instagram.com/",
+      "mediaType": "image",
+      "mediaUrl": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1200&q=80",
+      "caption": "3Dペンで仕上げた躍動感のあるドラゴン。骨格から羽根の繊細な質感まで一本ずつ描き起こしています。",
+      "tags": [
+        "3dひろば",
+        "3dペン",
+        "ドラゴン"
+      ],
+      "permalink": "https://www.instagram.com/",
+      "postedAt": "2026-03-18",
+      "pentaComment": "骨格から描いてるなんてすごい！羽根のしなり、ほんとに飛びそうだよ〜！",
+      "addedAt": "2026-03-18"
+    },
+    {
+      "id": "seed-manual-manual-002",
+      "method": "manual-upload",
+      "title": "ミニチュアの家",
+      "author": "@hiroba_user_b",
+      "authorUrl": "https://www.instagram.com/",
+      "mediaType": "image",
+      "mediaUrl": "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1200&q=80",
+      "caption": "窓枠や瓦まで3Dペンで再現した、手のひらサイズの一軒家。",
+      "tags": [
+        "3dひろば",
+        "ミニチュア"
+      ],
+      "permalink": "https://www.instagram.com/",
+      "postedAt": "2026-03-10",
+      "pentaComment": "瓦まで一枚ずつ！？このおうちに住みたいくらい！",
+      "addedAt": "2026-03-10"
+    },
+    {
+      "id": "seed-manual-manual-003",
+      "method": "manual-upload",
+      "title": "花のオーナメント",
+      "author": "@hiroba_user_c",
+      "authorUrl": "https://www.instagram.com/",
+      "mediaType": "image",
+      "mediaUrl": "https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=1200&q=80",
+      "caption": "透明フィラメントを重ねて、光を通す花びらに。",
+      "tags": [
+        "3dひろば",
+        "花"
+      ],
+      "permalink": "https://www.instagram.com/",
+      "postedAt": "2026-02-28",
+      "pentaComment": "光が透ける花びら、きれい〜！透明フィラメント使いこなしてるね！",
+      "addedAt": "2026-02-28"
+    },
+    {
+      "id": "seed-manual-manual-004",
+      "method": "manual-upload",
+      "title": "宇宙船モデル",
+      "author": "@hiroba_user_d",
+      "authorUrl": "https://www.instagram.com/",
+      "mediaType": "image",
+      "mediaUrl": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=1200&q=80",
+      "caption": "SF映画に出てきそうな宇宙船。推進ノズルの造形が見どころ。",
+      "tags": [
+        "3dひろば",
+        "宇宙船"
+      ],
+      "permalink": "https://www.instagram.com/",
+      "postedAt": "2026-02-15",
+      "pentaComment": "ノズルのこだわり伝わるよ〜！宇宙までひとっ飛びだね！",
+      "addedAt": "2026-02-15"
+    },
+    {
+      "id": "seed-manual-manual-005",
+      "method": "manual-upload",
+      "title": "和風ランタン",
+      "author": "@hiroba_user_e",
+      "authorUrl": "https://www.instagram.com/",
+      "mediaType": "image",
+      "mediaUrl": "https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?auto=format&fit=crop&w=1200&q=80",
+      "caption": "LEDを入れて灯せる和風ランタン。格子柄を一本ずつ描きました。",
+      "tags": [
+        "3dひろば",
+        "和風"
+      ],
+      "permalink": "https://www.instagram.com/",
+      "postedAt": "2026-02-02",
+      "pentaComment": "灯せるってロマンある〜！夜に眺めたいやつだ！",
+      "addedAt": "2026-02-02"
+    },
+    {
+      "id": "seed-manual-manual-006",
+      "method": "manual-upload",
+      "title": "恐竜フィギュア",
+      "author": "@hiroba_user_f",
+      "authorUrl": "https://www.instagram.com/",
+      "mediaType": "image",
+      "mediaUrl": "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?auto=format&fit=crop&w=1200&q=80",
+      "caption": "立ち姿のティラノサウルス。皮膚の質感までこだわりました。",
+      "tags": [
+        "3dひろば",
+        "恐竜"
+      ],
+      "permalink": "https://www.instagram.com/",
+      "postedAt": "2026-01-20",
+      "pentaComment": "皮膚のザラザラ感、最高〜！ティラノくん、にらまれてる気がする！",
+      "addedAt": "2026-01-20"
+    }
+  ],
+  "seedManualPostsImported": true
 }
