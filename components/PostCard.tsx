@@ -1,3 +1,5 @@
+"use client";
+
 import type { GalleryPost } from "@/lib/types";
 
 function formatDate(iso?: string) {
@@ -29,7 +31,13 @@ const SOURCE_META: Record<
   },
 };
 
-export function PostCard({ post }: { post: GalleryPost }) {
+export function PostCard({
+  post,
+  onImageClick,
+}: {
+  post: GalleryPost;
+  onImageClick?: (post: GalleryPost) => void;
+}) {
   const meta = SOURCE_META[post.source];
   const isVideo = post.mediaType === "video" && post.videoUrl;
 
@@ -57,7 +65,10 @@ export function PostCard({ post }: { post: GalleryPost }) {
   return (
     <article className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
       {isVideo ? (
-        <div className="block relative aspect-square overflow-hidden bg-paper">
+        <div
+          className="block relative aspect-square overflow-hidden bg-paper cursor-pointer"
+          onClick={() => onImageClick?.(post)}
+        >
           {mediaInner}
           <span
             className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
@@ -71,11 +82,9 @@ export function PostCard({ post }: { post: GalleryPost }) {
           )}
         </div>
       ) : (
-        <a
-          href={post.permalink ?? "#"}
-          target={post.permalink ? "_blank" : undefined}
-          rel={post.permalink ? "noopener noreferrer" : undefined}
-          className="block relative aspect-square overflow-hidden bg-paper"
+        <div
+          className="block relative aspect-square overflow-hidden bg-paper cursor-pointer"
+          onClick={() => onImageClick?.(post)}
         >
           {mediaInner}
           <span
@@ -88,7 +97,7 @@ export function PostCard({ post }: { post: GalleryPost }) {
               {post.author}
             </span>
           )}
-        </a>
+        </div>
       )}
       <div className="p-1 sm:p-2 flex-1 flex flex-col gap-1">
         {post.title && (
