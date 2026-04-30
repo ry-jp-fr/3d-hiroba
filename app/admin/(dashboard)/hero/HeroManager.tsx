@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { upload } from "@vercel/blob/client";
 import type { HeroConfig, HeroPhoto } from "@/lib/curation";
 
 type UploadedMeta = {
@@ -29,18 +30,16 @@ export function HeroManager({ initial }: { initial: HeroConfig }) {
   }
 
   async function uploadFile(file: File): Promise<UploadedMeta> {
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch("/api/admin/upload", {
-      method: "POST",
-      body: fd,
+    const blob = await upload(file.name, file, {
+      access: "public",
+      handleUploadUrl: "/api/admin/upload-token",
     });
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      const errorMsg = j.message ? `${j.error}: ${j.message}` : (j.error ?? "upload_failed");
-      throw new Error(errorMsg);
-    }
-    return (await res.json()) as UploadedMeta;
+    return {
+      url: blob.url,
+      mediaType: file.type.startsWith("video/") ? "video" : "image",
+      mime: file.type,
+      size: file.size,
+    };
   }
 
   async function handleImageUpload(
