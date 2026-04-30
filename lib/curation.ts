@@ -95,6 +95,14 @@ const defaultData: CurationData = {
   picks: [],
 };
 
+// In-memory cache to reduce Blob list() calls (5 min TTL)
+interface CacheEntry {
+  data: CurationData;
+  expiresAt: number;
+}
+let memCache: CacheEntry | null = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 function useBlob(): boolean {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 }
@@ -221,8 +229,21 @@ async function migrateSeedManualPosts(
 }
 
 export async function readCuration(): Promise<CurationData> {
+  // Return cached data if still valid (within 5 minutes)
+  if (memCache && memCache.expiresAt > Date.now()) {
+    return memCache.data;
+  }
+
   const raw = useBlob() ? await readFromBlob() : await readFromFile();
-  return migrateSeedManualPosts(raw);
+  const data = await migrateSeedManualPosts(raw);
+
+  // Update cache
+  memCache = {
+    data,
+    expiresAt: Date.now() + CACHE_TTL,
+  };
+
+  return data;
 }
 
 export async function writeCuration(data: CurationData): Promise<void> {
@@ -236,6 +257,7 @@ export async function updateCuration(
   const current = await readCuration();
   const next = await updater(current);
   await writeCuration(next);
+  memCache = null; // Invalidate cache after write
   return next;
 }
 
