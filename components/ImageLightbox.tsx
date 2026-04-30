@@ -74,6 +74,17 @@ export function ImageLightbox({
             </p>
           </div>
         )}
+
+        {post.permalink && (
+          <a
+            href={post.permalink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute bottom-4 right-4 bg-pink-500 hover:bg-pink-600 text-white rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
+          >
+            Instagramで見る
+          </a>
+        )}
       </div>
     </div>
   );
