@@ -66,11 +66,25 @@ export const DEFAULT_HERO: HeroConfig = {
   },
 };
 
+export type HomepageConfig = {
+  galleryTitle: string;
+  gallerySubtitleLabel: string;
+  galleryDescription: string;
+};
+
+export const DEFAULT_HOMEPAGE: HomepageConfig = {
+  galleryTitle: "みんなの「できた！」",
+  gallerySubtitleLabel: "ピックアップ",
+  galleryDescription:
+    "Instagramで #3dひろば をつけて投稿すると、このひろばに掲載される可能性があります。掲載作品は全国の実店舗モニターで紹介されることも。",
+};
+
 export type CurationData = {
   hashtags: HashtagEntry[];
   picks: PickEntry[];
   seedManualPostsImported?: boolean;
   hero?: HeroConfig;
+  homepage?: HomepageConfig;
 };
 
 type SeedManualPost = {
@@ -118,6 +132,7 @@ async function readFromFile(): Promise<CurationData> {
       picks: parsed.picks ?? [],
       seedManualPostsImported: parsed.seedManualPostsImported,
       hero: parsed.hero,
+      homepage: parsed.homepage,
     };
   } catch {
     return { ...defaultData };
@@ -155,6 +170,7 @@ async function readFromBlob(): Promise<CurationData> {
     picks: parsed.picks ?? [],
     seedManualPostsImported: parsed.seedManualPostsImported,
     hero: parsed.hero,
+    homepage: parsed.homepage,
   };
 }
 
@@ -170,6 +186,7 @@ async function seedBlobFromLocal(): Promise<CurationData> {
       picks: parsed.picks ?? [],
       seedManualPostsImported: parsed.seedManualPostsImported,
       hero: parsed.hero,
+      homepage: parsed.homepage,
     };
   } catch {
     // fall through to default
