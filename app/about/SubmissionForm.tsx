@@ -121,11 +121,10 @@ export function SubmissionForm() {
 
   return (
     <section className="mx-auto max-w-2xl">
-      <div className="rounded-2xl bg-amber-50 border border-amber-200 p-5 mb-8">
-        <p className="text-sm text-ink leading-relaxed">
-          作品が主役になるよう、お子さまやご家族の顔、名前、学校名、住所などが写らない写真・動画をお送りください。
-        </p>
-      </div>
+      <ul className="text-[11px] text-ink-muted space-y-1 mb-6">
+        <li>・顔や個人が特定できる情報が写り込まないようご注意ください。</li>
+        <li>・掲載後の削除をご希望の場合は、サイト運営までご連絡ください。</li>
+      </ul>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* 作品名 */}

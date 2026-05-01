@@ -119,35 +119,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Section 5: 掲載にあたってのお願い */}
-      <section className="mb-16">
-        <h2 className="text-2xl md:text-3xl font-bold mb-6">
-          掲載にあたってのお願い
-        </h2>
-        <ul className="space-y-3 text-ink-muted">
-          <li className="flex gap-3">
-            <span className="text-brand-dark font-bold">•</span>
-            <span>ご自身、またはお子さまが制作した作品を送ってください。</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-brand-dark font-bold">•</span>
-            <span>お子さまの作品を送る場合は、保護者の方が投稿・管理してください。</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-brand-dark font-bold">•</span>
-            <span>顔や個人が特定できる情報が写り込まないようご注意ください。</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-brand-dark font-bold">•</span>
-            <span>掲載時は、作品名、投稿者名またはInstagramユーザー名、作品画像・動画を表示する場合があります。</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-brand-dark font-bold">•</span>
-            <span>掲載後の削除をご希望の場合は、サイト運営までご連絡ください。</span>
-          </li>
-        </ul>
-      </section>
-
       {/* Submission Form */}
       <section className="mb-16">
         <SubmissionForm />
