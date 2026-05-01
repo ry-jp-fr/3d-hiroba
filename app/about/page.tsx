@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SubmissionForm } from "./SubmissionForm";
 
 export const metadata: Metadata = {
   title: "3Dひろばとは",
@@ -82,42 +83,39 @@ export default function AboutPage() {
       {/* Section 4: 参加方法*/}
       <section id="submit" className="mb-16">
         <h2 className="text-2xl md:text-3xl font-bold mb-8">参加方法</h2>
-        <p className="text-ink-muted mb-8 leading-relaxed">
-          参加方法は2つあります。
-        </p>
 
-        <div className="space-y-6 mb-8">
+        <div className="space-y-6">
           <div className="rounded-2xl border border-black/5 bg-white p-6">
             <h3 className="text-lg font-bold text-ink mb-3">
-              ① Instagramでみせる
+              1. Instagramでみせる
             </h3>
-            <p className="text-ink-muted leading-relaxed">
-              Instagramで作品写真や動画を投稿する際に、
-              <span className="font-semibold">#3dひろば</span>
-              {" "}
-              をつけて投稿してください。<br />
-              掲載候補となった作品は、運営側で確認のうえ、3Dひろばに掲載させていただく場合があります。
-            </p>
+            <ul className="space-y-2 text-ink-muted text-sm leading-relaxed">
+              <li className="flex gap-3">
+                <span className="text-brand-dark font-bold">•</span>
+                <span>Instagramで作品写真や動画を投稿する際に、<span className="font-semibold">#3dひろば</span> をつけて投稿してください。</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-brand-dark font-bold">•</span>
+                <span>掲載候補となった作品は、運営側で確認のうえ、3Dひろばに掲載させていただく場合があります。</span>
+              </li>
+            </ul>
           </div>
 
           <div className="rounded-2xl border border-black/5 bg-white p-6">
             <h3 className="text-lg font-bold text-ink mb-3">
-              ② 応募フォームからみせる
+              2. 応募フォームからみせる
             </h3>
-            <p className="text-ink-muted leading-relaxed">
-              Instagramを使っていない方や、直接応募したい方は、応募フォームから作品を送ることができます。<br />
-              完成作品だけでなく、途中の作品や「できた！」と思えた瞬間の写真・動画も歓迎します。
-            </p>
+            <ul className="space-y-2 text-ink-muted text-sm leading-relaxed">
+              <li className="flex gap-3">
+                <span className="text-brand-dark font-bold">•</span>
+                <span>Instagramを使っていない方や、直接応募したい方は、下のフォームから作品を送ることができます。</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-brand-dark font-bold">•</span>
+                <span>完成作品だけでなく、途中の作品や「できた！」と思えた瞬間の写真・動画も歓迎します。</span>
+              </li>
+            </ul>
           </div>
-        </div>
-
-        <div className="flex justify-center">
-          <a
-            href="#submit"
-            className="inline-block rounded-full bg-brand text-white font-semibold px-8 py-3 text-base hover:bg-brand-dark transition-colors"
-          >
-            できた！をみせる
-          </a>
         </div>
       </section>
 
@@ -148,6 +146,11 @@ export default function AboutPage() {
             <span>掲載後の削除をご希望の場合は、サイト運営までご連絡ください。</span>
           </li>
         </ul>
+      </section>
+
+      {/* Submission Form */}
+      <section className="mb-16">
+        <SubmissionForm />
       </section>
 
       {/* Section 6: 公式パートナーについて */}
