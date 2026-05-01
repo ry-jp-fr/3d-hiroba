@@ -35,9 +35,9 @@ export async function PUT(req: Request) {
     const body = (await req.json()) as HomepageConfig;
 
     const normalized: HomepageConfig = {
-      galleryTitle: (body.galleryTitle ?? "").trim() || DEFAULT_HOMEPAGE.galleryTitle,
-      gallerySubtitleLabel: (body.gallerySubtitleLabel ?? "").trim() || DEFAULT_HOMEPAGE.gallerySubtitleLabel,
-      galleryDescription: (body.galleryDescription ?? "").trim() || DEFAULT_HOMEPAGE.galleryDescription,
+      galleryTitle: (body.galleryTitle ?? "").trim(),
+      gallerySubtitleLabel: (body.gallerySubtitleLabel ?? "").trim(),
+      galleryDescription: (body.galleryDescription ?? "").trim(),
     };
 
     const updated = await updateCuration((current) => ({

@@ -43,6 +43,9 @@ export function HomepageManager({
     <div className="space-y-6">
       <section className="bg-white rounded-3xl border border-black/5 p-6 space-y-4">
         <h2 className="font-bold text-lg">ギャラリーセクション</h2>
+        <p className="text-xs text-ink-muted">
+          各項目を空欄にすると、トップページにそのテキストは表示されなくなります。
+        </p>
 
         <Field label="ギャラリータイトル">
           <input
@@ -57,7 +60,7 @@ export function HomepageManager({
 
         <Field
           label="サブタイトルラベル"
-          hint="ピックアップ件数の前に表示される文字"
+          hint="ピックアップ件数の前に表示される文字。空欄の場合は件数の行ごと非表示になります。"
         >
           <input
             value={homepage.gallerySubtitleLabel}
