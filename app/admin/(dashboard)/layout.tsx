@@ -12,7 +12,8 @@ export const metadata: Metadata = {
 
 const navItems = [
   { href: "/admin", label: "ダッシュボード" },
-  { href: "/admin/hero", label: "トップページ" },
+  { href: "/admin/hero", label: "トップページ（ヒーロー）" },
+  { href: "/admin/homepage", label: "トップページ（テキスト）" },
   { href: "/admin/hashtags", label: "ハッシュタグ" },
   { href: "/admin/instagram-urls", label: "Instagram URL" },
   { href: "/admin/uploads", label: "手動アップロード" },
