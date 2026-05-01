@@ -2,10 +2,9 @@ import Link from "next/link";
 import { LogoMark } from "./LogoMark";
 
 const navItems = [
-  { href: "/", label: "みんなの「できた！」" },
+  { href: "/", label: "みんなの作品" },
   { href: "/about", label: "3Dひろばとは" },
-  { href: "/partners", label: "パートナー" },
-  { href: "/submit", label: "「できた！」をみせる" },
+  { href: "/about#submit", label: "できた！をみせる" },
 ];
 
 export function SiteHeader() {
