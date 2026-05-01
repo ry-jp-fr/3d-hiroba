@@ -3,7 +3,7 @@ import { HomepageManager } from "./HomepageManager";
 
 export default async function HomepagePage() {
   const curation = await readCuration();
-  const homepage = curation.homepage || DEFAULT_HOMEPAGE;
+  const homepage = curation.homepage ?? DEFAULT_HOMEPAGE;
 
   return (
     <div>
