@@ -6,9 +6,7 @@ import type { PickEntry } from "@/lib/curation";
 type FormState = {
   method: "url" | "embed";
   permalink: string;
-  mediaUrl: string;
   embedHtml: string;
-  thumbnailUrl: string;
   title: string;
   author: string;
   authorUrl: string;
@@ -21,9 +19,7 @@ type FormState = {
 const EMPTY: FormState = {
   method: "url",
   permalink: "",
-  mediaUrl: "",
   embedHtml: "",
-  thumbnailUrl: "",
   title: "",
   author: "",
   authorUrl: "",
@@ -103,6 +99,9 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
     e.preventDefault();
     setError(null);
 
+    let permalinkToSubmit: string;
+    let embedHtmlToSubmit: string | undefined;
+
     if (form.method === "url") {
       if (!form.permalink.trim()) {
         setError("投稿URLは必須です");
@@ -112,36 +111,8 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
         setError("Instagramの投稿URLを入力してください");
         return;
       }
-      if (!form.mediaUrl.trim()) {
-        setError("カバー画像URLは必須です");
-        return;
-      }
-
-      setBusy(true);
-      setBusyLabel("登録中...");
-      const res = await fetch("/api/admin/picks", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          method: "instagram-url",
-          mediaType: "image",
-          permalink: form.permalink.trim(),
-          mediaUrl: form.mediaUrl.trim(),
-          title: form.title.trim() || undefined,
-          author: form.author.trim() || undefined,
-          authorUrl: form.authorUrl.trim() || undefined,
-          caption: form.caption.trim() || undefined,
-          tags: form.tags,
-          postedAt: form.postedAt || undefined,
-          pentaComment: form.pentaComment.trim() || undefined,
-        }),
-      });
-      setBusy(false);
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(`登録に失敗しました (${j.error ?? res.status})`);
-        return;
-      }
+      permalinkToSubmit = form.permalink.trim();
+      embedHtmlToSubmit = undefined;
     } else {
       if (!form.embedHtml.trim()) {
         setError("埋め込みコードは必須です");
@@ -158,15 +129,14 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
         setError("埋め込みコードから投稿URLが抽出できません");
         return;
       }
+      permalinkToSubmit = permalinkFromEmbed;
+      embedHtmlToSubmit = sanitized;
+    }
 
-      if (!thumbnailFile) {
-        setError("サムネイル画像をアップロードしてください");
-        return;
-      }
-
+    let uploadedUrl: string | undefined;
+    if (thumbnailFile) {
       setBusy(true);
       setBusyLabel("画像をアップロード中...");
-      let uploadedUrl: string;
       try {
         uploadedUrl = await uploadThumbnail(thumbnailFile);
       } catch (err) {
@@ -174,32 +144,40 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
         setError(`画像アップロードに失敗しました (${err instanceof Error ? err.message : "unknown"})`);
         return;
       }
+    }
 
-      setBusyLabel("投稿を登録中...");
-      const res = await fetch("/api/admin/picks", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          method: "instagram-url",
-          mediaType: "image",
-          permalink: permalinkFromEmbed,
-          embedHtml: sanitized,
-          mediaUrl: uploadedUrl,
-          title: form.title.trim() || undefined,
-          author: form.author.trim() || undefined,
-          authorUrl: form.authorUrl.trim() || undefined,
-          caption: form.caption.trim() || undefined,
-          tags: form.tags,
-          postedAt: form.postedAt || undefined,
-          pentaComment: form.pentaComment.trim() || undefined,
-        }),
-      });
-      setBusy(false);
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(`登録に失敗しました (${j.error ?? res.status})`);
-        return;
-      }
+    setBusy(true);
+    setBusyLabel(uploadedUrl ? "投稿を登録中..." : "Instagram からサムネを取得して登録中...");
+    const res = await fetch("/api/admin/picks", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        method: "instagram-url",
+        mediaType: "image",
+        permalink: permalinkToSubmit,
+        embedHtml: embedHtmlToSubmit,
+        mediaUrl: uploadedUrl,
+        title: form.title.trim() || undefined,
+        author: form.author.trim() || undefined,
+        authorUrl: form.authorUrl.trim() || undefined,
+        caption: form.caption.trim() || undefined,
+        tags: form.tags,
+        postedAt: form.postedAt || undefined,
+        pentaComment: form.pentaComment.trim() || undefined,
+      }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      const errKey = j.error ?? res.status;
+      const friendly =
+        errKey === "og_not_found"
+          ? "Instagram からサムネ画像を取得できませんでした。投稿が公開されているか確認するか、サムネ画像を手動でアップロードしてください。"
+          : errKey === "og_fetch_failed"
+            ? "Instagram への接続に失敗しました。FACEBOOK_APP_ID / APP_SECRET の設定を確認してください。"
+            : `登録に失敗しました (${errKey})`;
+      setError(friendly);
+      return;
     }
 
     const refreshRes = await fetch("/api/admin/picks");
@@ -249,77 +227,61 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
         </div>
 
         {form.method === "url" ? (
-          <>
-            <Field label="Instagram 投稿URL" required>
-              <input
-                type="url"
-                value={form.permalink}
-                onChange={(e) => set("permalink", e.target.value)}
-                placeholder="https://www.instagram.com/p/XXXXXXXX/"
-                className={inputCls}
-                required
-              />
-            </Field>
-
-            <Field
-              label="カバー画像URL"
+          <Field
+            label="Instagram 投稿URL"
+            required
+            hint="登録時にサムネ画像を Instagram から自動取得し、Vercel Blob に保存します"
+          >
+            <input
+              type="url"
+              value={form.permalink}
+              onChange={(e) => set("permalink", e.target.value)}
+              placeholder="https://www.instagram.com/p/XXXXXXXX/"
+              className={inputCls}
               required
-              hint="Instagramの画像は直リンクNGな場合があるため、別ホスト（Cloudinary等）にアップロードしたURLを推奨"
-            >
-              <input
-                type="url"
-                value={form.mediaUrl}
-                onChange={(e) => set("mediaUrl", e.target.value)}
-                placeholder="https://res.cloudinary.com/..../image.jpg"
-                className={inputCls}
-                required
-              />
-            </Field>
-          </>
+            />
+          </Field>
         ) : (
-          <>
-            <Field
-              label="埋め込みコード"
+          <Field
+            label="埋め込みコード"
+            required
+            hint="Instagram で投稿を開き「シェア」→「コードをコピー」で取得したコードを貼り付けてください。サムネ画像は自動取得されます"
+          >
+            <textarea
+              value={form.embedHtml}
+              onChange={(e) => set("embedHtml", e.target.value)}
+              rows={4}
+              placeholder='<blockquote class="instagram-media" data-instgrm-permalink="..."'
+              className={inputCls}
               required
-              hint="Instagram で投稿を開き「シェア」→「コードをコピー」で取得したコードを貼り付けてください"
-            >
-              <textarea
-                value={form.embedHtml}
-                onChange={(e) => set("embedHtml", e.target.value)}
-                rows={4}
-                placeholder='<blockquote class="instagram-media" data-instgrm-permalink="..."'
-                className={inputCls}
-                required
-              />
-            </Field>
-
-            <Field
-              label="サムネイル画像"
-              required
-              hint="投稿のスクリーンショットや画像ファイルをアップロードしてください。Vercel Blob に保存されます"
-            >
-              <div className="flex items-start gap-3">
-                {thumbnailPreview && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={thumbnailPreview}
-                    alt="プレビュー"
-                    className="w-20 h-20 rounded-xl object-cover bg-paper flex-shrink-0 border border-black/10"
-                  />
-                )}
-                <div className="flex-1">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    onChange={onFileChange}
-                    className="block w-full text-sm text-ink-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-light file:text-brand-dark hover:file:bg-brand-light/80"
-                  />
-                </div>
-              </div>
-            </Field>
-          </>
+            />
+          </Field>
         )}
+
+        <Field
+          label="サムネイル画像（任意・フォールバック）"
+          hint="自動取得が失敗した場合のために、手動でサムネ画像をアップロードできます。指定があればそちらを優先します"
+        >
+          <div className="flex items-start gap-3">
+            {thumbnailPreview && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={thumbnailPreview}
+                alt="プレビュー"
+                className="w-20 h-20 rounded-xl object-cover bg-paper flex-shrink-0 border border-black/10"
+              />
+            )}
+            <div className="flex-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={onFileChange}
+                className="block w-full text-sm text-ink-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-light file:text-brand-dark hover:file:bg-brand-light/80"
+              />
+            </div>
+          </div>
+        </Field>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="タイトル">
