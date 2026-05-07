@@ -63,13 +63,6 @@ export async function POST(req: Request) {
   const embedHtml = body.embedHtml ? String(body.embedHtml).trim() : "";
   const mediaUrl = String(body.mediaUrl ?? "").trim();
 
-  if (!embedHtml && !mediaUrl) {
-    return NextResponse.json(
-      { error: "media_url_or_embed_required" },
-      { status: 400 },
-    );
-  }
-
   let permalink = typeof body.permalink === "string" ? body.permalink.trim() : "";
   let shortcode: string | null = null;
   if (method === "instagram-url") {
@@ -86,10 +79,15 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+  } else if (!mediaUrl) {
+    return NextResponse.json(
+      { error: "media_url_required" },
+      { status: 400 },
+    );
   }
 
   let resolvedMediaUrl: string | undefined = mediaUrl || undefined;
-  if (embedHtml && !mediaUrl && shortcode) {
+  if (!mediaUrl && shortcode) {
     try {
       console.log(`[picks] fetching OG image for permalink=${permalink}`);
       const ogUrl = await fetchInstagramOgImage(permalink);
