@@ -45,7 +45,11 @@ export function SubmissionsManager({
     });
     setBusyId(null);
     if (!res.ok) {
-      setError("承認に失敗しました");
+      const detail = await res
+        .json()
+        .then((j) => j?.message || j?.error)
+        .catch(() => null);
+      setError(`承認に失敗しました (${res.status}${detail ? `: ${detail}` : ""})`);
       return;
     }
     const json = (await res.json()) as { submissions: SubmissionEntry[] };
@@ -62,7 +66,11 @@ export function SubmissionsManager({
     );
     setBusyId(null);
     if (!res.ok) {
-      setError("削除に失敗しました");
+      const detail = await res
+        .json()
+        .then((j) => j?.message || j?.error)
+        .catch(() => null);
+      setError(`削除に失敗しました (${res.status}${detail ? `: ${detail}` : ""})`);
       return;
     }
     const json = (await res.json()) as { submissions: SubmissionEntry[] };

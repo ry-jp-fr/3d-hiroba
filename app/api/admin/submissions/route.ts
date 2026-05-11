@@ -71,34 +71,43 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "id_required" }, { status: 400 });
   }
 
-  let conflict = false;
-  let missing = false;
-  const updated = await updateCuration((data) => {
-    const target = data.submissions.find((s) => s.id === id);
-    if (!target) {
-      missing = true;
-      return data;
-    }
-    if (target.approvedPickId) {
-      conflict = true;
-      return data;
-    }
-    const pick = buildPickFromSubmission(target);
-    return {
-      ...data,
-      picks: [pick, ...data.picks],
-      submissions: data.submissions.map((s) =>
-        s.id === id ? { ...s, approvedPickId: pick.id } : s,
-      ),
-    };
-  });
+  try {
+    let conflict = false;
+    let missing = false;
+    const updated = await updateCuration((data) => {
+      const target = data.submissions.find((s) => s.id === id);
+      if (!target) {
+        missing = true;
+        return data;
+      }
+      if (target.approvedPickId) {
+        conflict = true;
+        return data;
+      }
+      const pick = buildPickFromSubmission(target);
+      return {
+        ...data,
+        picks: [pick, ...data.picks],
+        submissions: data.submissions.map((s) =>
+          s.id === id ? { ...s, approvedPickId: pick.id } : s,
+        ),
+      };
+    });
 
-  if (missing) {
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
+    if (missing) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+    if (conflict) {
+      return NextResponse.json({ error: "already_approved" }, { status: 409 });
+    }
+    revalidatePath("/");
+    return NextResponse.json({ submissions: updated.submissions });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "unknown";
+    console.error("[admin/submissions] approve failed:", message);
+    return NextResponse.json(
+      { error: "approve_failed", message },
+      { status: 500 },
+    );
   }
-  if (conflict) {
-    return NextResponse.json({ error: "already_approved" }, { status: 409 });
-  }
-  revalidatePath("/");
-  return NextResponse.json({ submissions: updated.submissions });
 }
