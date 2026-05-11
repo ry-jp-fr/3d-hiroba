@@ -282,6 +282,19 @@ export async function readCuration(): Promise<CurationData> {
   return data;
 }
 
+async function readCurationFresh(): Promise<CurationData> {
+  // Bypass the in-memory cache and read directly from the source. Critical for
+  // read-modify-write cycles in multi-instance serverless deployments where
+  // each instance's cache can be out of sync with the latest Blob contents.
+  const raw = useBlob() ? await readFromBlob() : await readFromFile();
+  const data = await migrateSeedManualPosts(raw);
+  memCache = {
+    data,
+    expiresAt: Date.now() + CACHE_TTL,
+  };
+  return data;
+}
+
 export async function writeCuration(data: CurationData): Promise<void> {
   if (useBlob()) return writeToBlob(data);
   return writeToFile(data);
@@ -290,7 +303,7 @@ export async function writeCuration(data: CurationData): Promise<void> {
 export async function updateCuration(
   updater: (data: CurationData) => CurationData | Promise<CurationData>,
 ): Promise<CurationData> {
-  const current = await readCuration();
+  const current = await readCurationFresh();
   const next = await updater(current);
   await writeCuration(next);
   memCache = null; // Invalidate cache after write
