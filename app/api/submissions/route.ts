@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createId, updateCuration } from "@/lib/curation";
 
 type SubmissionData = {
   title: string;
@@ -71,16 +72,23 @@ export async function POST(req: Request) {
       );
     }
 
-    // TODO: Save submission to database or external service
-    // For now, we just log it
-    console.log("[submission] New submission received:", {
-      title: body.title,
-      name: body.name,
-      email: body.email,
-      hasImage: !!body.imageUrl,
-      hasInstagramUrl: !!body.instagramUrl,
-      timestamp: new Date().toISOString(),
-    });
+    const entry = {
+      id: createId("sub"),
+      title: body.title.trim(),
+      name: body.name.trim(),
+      email: body.email.trim(),
+      imageUrl: body.imageUrl?.trim() || undefined,
+      instagramUrl: body.instagramUrl?.trim() || undefined,
+      notes: body.notes?.trim() || undefined,
+      consent: body.consent,
+      parentalConsent: body.parentalConsent,
+      submittedAt: new Date().toISOString(),
+    };
+
+    await updateCuration((data) => ({
+      ...data,
+      submissions: [entry, ...data.submissions],
+    }));
 
     return NextResponse.json(
       {
