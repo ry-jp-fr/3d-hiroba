@@ -19,6 +19,62 @@ export async function GET() {
   return NextResponse.json({ submissions: data.submissions });
 }
 
+export async function PATCH(req: Request) {
+  const unauth = await requireAdmin();
+  if (unauth) return unauth;
+  const body = await req.json().catch(() => null);
+  const id = String(body?.id ?? "");
+  if (!id) {
+    return NextResponse.json({ error: "id_required" }, { status: 400 });
+  }
+  const titleRaw = body?.title;
+  const nameRaw = body?.name;
+  const newTitle =
+    typeof titleRaw === "string" ? titleRaw.trim() : undefined;
+  const newName = typeof nameRaw === "string" ? nameRaw.trim() : undefined;
+  if (newTitle === undefined && newName === undefined) {
+    return NextResponse.json({ error: "no_fields" }, { status: 400 });
+  }
+  if (newTitle !== undefined && !newTitle) {
+    return NextResponse.json({ error: "title_required" }, { status: 400 });
+  }
+  if (newName !== undefined && !newName) {
+    return NextResponse.json({ error: "name_required" }, { status: 400 });
+  }
+
+  let missing = false;
+  const updated = await updateCuration((data) => {
+    const target = data.submissions.find((s) => s.id === id);
+    if (!target) {
+      missing = true;
+      return data;
+    }
+    const nextTitle = newTitle ?? target.title;
+    const nextName = newName ?? target.name;
+    const nextSubmissions = data.submissions.map((s) =>
+      s.id === id ? { ...s, title: nextTitle, name: nextName } : s,
+    );
+    const nextPicks = target.approvedPickId
+      ? data.picks.map((p) =>
+          p.id === target.approvedPickId
+            ? { ...p, title: nextTitle, author: nextName }
+            : p,
+        )
+      : data.picks;
+    return {
+      ...data,
+      submissions: nextSubmissions,
+      picks: nextPicks,
+    };
+  });
+
+  if (missing) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  revalidatePath("/");
+  return NextResponse.json({ submissions: updated.submissions });
+}
+
 export async function DELETE(req: Request) {
   const unauth = await requireAdmin();
   if (unauth) return unauth;

@@ -24,6 +24,8 @@ function formatDate(iso: string): string {
   }
 }
 
+type EditDraft = { title: string; name: string };
+
 export function SubmissionsManager({
   initial,
 }: {
@@ -32,6 +34,50 @@ export function SubmissionsManager({
   const [items, setItems] = useState<SubmissionEntry[]>(initial);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<EditDraft>({ title: "", name: "" });
+
+  function startEdit(s: SubmissionEntry) {
+    setEditingId(s.id);
+    setDraft({ title: s.title, name: s.name });
+    setError(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  async function saveEdit(s: SubmissionEntry) {
+    const title = draft.title.trim();
+    const name = draft.name.trim();
+    if (!title) {
+      setError("作品名を入力してください");
+      return;
+    }
+    if (!name) {
+      setError("投稿者名を入力してください");
+      return;
+    }
+    setBusyId(s.id);
+    setError(null);
+    const res = await fetch("/api/admin/submissions", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: s.id, title, name }),
+    });
+    setBusyId(null);
+    if (!res.ok) {
+      const detail = await res
+        .json()
+        .then((j) => j?.message || j?.error)
+        .catch(() => null);
+      setError(`更新に失敗しました (${res.status}${detail ? `: ${detail}` : ""})`);
+      return;
+    }
+    const json = (await res.json()) as { submissions: SubmissionEntry[] };
+    setItems(json.submissions);
+    setEditingId(null);
+  }
 
   async function approve(s: SubmissionEntry) {
     if (s.approvedPickId) return;
@@ -124,11 +170,49 @@ export function SubmissionsManager({
 
               <div className="flex-1 min-w-0 space-y-2">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div className="min-w-0">
-                    <h2 className="font-bold text-base truncate">{s.title}</h2>
-                    <p className="text-xs text-ink-muted mt-0.5">
-                      {formatDate(s.submittedAt)} · {s.name}
-                    </p>
+                  <div className="min-w-0 flex-1">
+                    {editingId === s.id ? (
+                      <div className="space-y-2">
+                        <label className="block">
+                          <span className="text-[11px] text-ink-muted">
+                            作品名
+                          </span>
+                          <input
+                            type="text"
+                            value={draft.title}
+                            onChange={(e) =>
+                              setDraft((d) => ({ ...d, title: e.target.value }))
+                            }
+                            className="mt-0.5 w-full rounded-lg border border-black/10 bg-paper px-2 py-1.5 text-sm focus:outline-none focus:border-brand"
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="text-[11px] text-ink-muted">
+                            投稿者名
+                          </span>
+                          <input
+                            type="text"
+                            value={draft.name}
+                            onChange={(e) =>
+                              setDraft((d) => ({ ...d, name: e.target.value }))
+                            }
+                            className="mt-0.5 w-full rounded-lg border border-black/10 bg-paper px-2 py-1.5 text-sm focus:outline-none focus:border-brand"
+                          />
+                        </label>
+                        <p className="text-[11px] text-ink-muted">
+                          {formatDate(s.submittedAt)}
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <h2 className="font-bold text-base truncate">
+                          {s.title}
+                        </h2>
+                        <p className="text-xs text-ink-muted mt-0.5">
+                          {formatDate(s.submittedAt)} · {s.name}
+                        </p>
+                      </>
+                    )}
                   </div>
                   {approved && (
                     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
@@ -175,27 +259,58 @@ export function SubmissionsManager({
                   </dd>
                 </dl>
 
-                <div className="flex items-center gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => approve(s)}
-                    disabled={approved || busy}
-                    className="text-xs px-3 py-1.5 rounded-full bg-brand text-white font-semibold hover:bg-brand-dark disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {approved
-                      ? "ギャラリー掲載済み"
-                      : busy
-                        ? "処理中..."
-                        : "承認してギャラリーに掲載"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => remove(s)}
-                    disabled={busy}
-                    className="text-xs px-3 py-1.5 rounded-full text-red-700 hover:bg-red-50 disabled:opacity-40"
-                  >
-                    削除
-                  </button>
+                <div className="flex items-center gap-2 pt-2 flex-wrap">
+                  {editingId === s.id ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => saveEdit(s)}
+                        disabled={busy}
+                        className="text-xs px-3 py-1.5 rounded-full bg-brand text-white font-semibold hover:bg-brand-dark disabled:opacity-40"
+                      >
+                        {busy ? "保存中..." : "保存"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        disabled={busy}
+                        className="text-xs px-3 py-1.5 rounded-full bg-paper hover:bg-black/5 disabled:opacity-40"
+                      >
+                        キャンセル
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => approve(s)}
+                        disabled={approved || busy}
+                        className="text-xs px-3 py-1.5 rounded-full bg-brand text-white font-semibold hover:bg-brand-dark disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {approved
+                          ? "ギャラリー掲載済み"
+                          : busy
+                            ? "処理中..."
+                            : "承認してギャラリーに掲載"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(s)}
+                        disabled={busy}
+                        className="text-xs px-3 py-1.5 rounded-full bg-paper hover:bg-black/5 disabled:opacity-40"
+                      >
+                        編集
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => remove(s)}
+                        disabled={busy}
+                        className="text-xs px-3 py-1.5 rounded-full text-red-700 hover:bg-red-50 disabled:opacity-40"
+                      >
+                        削除
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </li>
