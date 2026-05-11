@@ -16,6 +16,9 @@ export default async function AdminDashboardPage() {
   const uploadCount = curation.picks.filter(
     (p) => p.method === "manual-upload",
   ).length;
+  const pendingSubmissions = curation.submissions.filter(
+    (s) => !s.approvedPickId,
+  ).length;
 
   const cards = [
     {
@@ -45,6 +48,13 @@ export default async function AdminDashboardPage() {
       body: "トップの見出し・説明文・メイン画像 2 枚を変更できます。",
       stat: "",
       color: "bg-emerald-50 border-emerald-100",
+    },
+    {
+      href: "/admin/submissions",
+      title: "投稿フォーム応募",
+      body: "公式サイトの投稿フォームから届いた応募を確認し、ギャラリー掲載 / 削除を判断できます。",
+      stat: `${pendingSubmissions} 件未承認`,
+      color: "bg-sky-50 border-sky-100",
     },
   ];
 

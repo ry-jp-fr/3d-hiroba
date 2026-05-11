@@ -66,6 +66,20 @@ export const DEFAULT_HERO: HeroConfig = {
   },
 };
 
+export type SubmissionEntry = {
+  id: string;
+  title: string;
+  name: string;
+  email: string;
+  imageUrl?: string;
+  instagramUrl?: string;
+  notes?: string;
+  consent: boolean;
+  parentalConsent: boolean;
+  submittedAt: string;
+  approvedPickId?: string;
+};
+
 export type HomepageConfig = {
   galleryTitle: string;
   gallerySubtitleLabel: string;
@@ -82,6 +96,7 @@ export const DEFAULT_HOMEPAGE: HomepageConfig = {
 export type CurationData = {
   hashtags: HashtagEntry[];
   picks: PickEntry[];
+  submissions: SubmissionEntry[];
   seedManualPostsImported?: boolean;
   hero?: HeroConfig;
   homepage?: HomepageConfig;
@@ -107,6 +122,7 @@ const BLOB_PATHNAME = "curation/curation.json";
 const defaultData: CurationData = {
   hashtags: [],
   picks: [],
+  submissions: [],
 };
 
 // In-memory cache to reduce Blob list() calls (5 min TTL)
@@ -138,6 +154,7 @@ async function readFromFile(): Promise<CurationData> {
     return {
       hashtags: parsed.hashtags ?? [],
       picks: parsed.picks ?? [],
+      submissions: parsed.submissions ?? [],
       seedManualPostsImported: parsed.seedManualPostsImported,
       hero: parsed.hero,
       homepage: parsed.homepage,
@@ -176,6 +193,7 @@ async function readFromBlob(): Promise<CurationData> {
   return {
     hashtags: parsed.hashtags ?? [],
     picks: parsed.picks ?? [],
+    submissions: parsed.submissions ?? [],
     seedManualPostsImported: parsed.seedManualPostsImported,
     hero: parsed.hero,
     homepage: parsed.homepage,
@@ -192,6 +210,7 @@ async function seedBlobFromLocal(): Promise<CurationData> {
     initial = {
       hashtags: parsed.hashtags ?? [],
       picks: parsed.picks ?? [],
+      submissions: parsed.submissions ?? [],
       seedManualPostsImported: parsed.seedManualPostsImported,
       hero: parsed.hero,
       homepage: parsed.homepage,
