@@ -66,6 +66,18 @@ export const DEFAULT_HERO: HeroConfig = {
   },
 };
 
+export type SheetDifficulty = "beginner" | "intermediate" | "advanced";
+
+export type SheetEntry = {
+  id: string;
+  title: string;
+  description?: string;
+  difficulty: SheetDifficulty;
+  pdfUrl: string;
+  thumbnailUrl?: string;
+  addedAt: string;
+};
+
 export type SubmissionEntry = {
   id: string;
   title: string;
@@ -97,6 +109,7 @@ export type CurationData = {
   hashtags: HashtagEntry[];
   picks: PickEntry[];
   submissions: SubmissionEntry[];
+  sheets: SheetEntry[];
   seedManualPostsImported?: boolean;
   hero?: HeroConfig;
   homepage?: HomepageConfig;
@@ -123,6 +136,7 @@ const defaultData: CurationData = {
   hashtags: [],
   picks: [],
   submissions: [],
+  sheets: [],
 };
 
 function useBlob(): boolean {
@@ -147,6 +161,7 @@ async function readFromFile(): Promise<CurationData> {
       hashtags: parsed.hashtags ?? [],
       picks: parsed.picks ?? [],
       submissions: parsed.submissions ?? [],
+      sheets: parsed.sheets ?? [],
       seedManualPostsImported: parsed.seedManualPostsImported,
       hero: parsed.hero,
       homepage: parsed.homepage,
@@ -186,6 +201,7 @@ async function readFromBlob(): Promise<CurationData> {
     hashtags: parsed.hashtags ?? [],
     picks: parsed.picks ?? [],
     submissions: parsed.submissions ?? [],
+    sheets: parsed.sheets ?? [],
     seedManualPostsImported: parsed.seedManualPostsImported,
     hero: parsed.hero,
     homepage: parsed.homepage,
@@ -203,6 +219,7 @@ async function seedBlobFromLocal(): Promise<CurationData> {
       hashtags: parsed.hashtags ?? [],
       picks: parsed.picks ?? [],
       submissions: parsed.submissions ?? [],
+      sheets: parsed.sheets ?? [],
       seedManualPostsImported: parsed.seedManualPostsImported,
       hero: parsed.hero,
       homepage: parsed.homepage,

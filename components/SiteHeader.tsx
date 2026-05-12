@@ -3,6 +3,7 @@ import { LogoMark } from "./LogoMark";
 
 const navItems = [
   { href: "/", label: "みんなの作品" },
+  { href: "/sheets", label: "なぞりシート" },
   { href: "/about", label: "3Dひろばとは" },
   { href: "/about#submit", label: "できた！をみせる" },
 ];

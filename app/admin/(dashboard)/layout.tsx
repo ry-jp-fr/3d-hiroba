@@ -18,6 +18,7 @@ const navItems = [
   { href: "/admin/instagram-urls", label: "Instagram URL" },
   { href: "/admin/uploads", label: "手動アップロード" },
   { href: "/admin/submissions", label: "投稿フォーム" },
+  { href: "/admin/sheets", label: "なぞりシート" },
 ];
 
 export default async function AdminLayout({
