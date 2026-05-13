@@ -19,6 +19,7 @@ export default async function AdminDashboardPage() {
   const pendingSubmissions = curation.submissions.filter(
     (s) => !s.approvedPickId,
   ).length;
+  const sheetCount = curation.sheets.length;
 
   const cards = [
     {
@@ -55,6 +56,13 @@ export default async function AdminDashboardPage() {
       body: "公式サイトの投稿フォームから届いた応募を確認し、ギャラリー掲載 / 削除を判断できます。",
       stat: `${pendingSubmissions} 件未承認`,
       color: "bg-sky-50 border-sky-100",
+    },
+    {
+      href: "/admin/sheets",
+      title: "なぞりシート",
+      body: "3Dペン用のなぞりシート（PDF）を登録・編集できます。サイトの /sheets ページに公開されます。",
+      stat: `${sheetCount} 件登録`,
+      color: "bg-rose-50 border-rose-100",
     },
   ];
 

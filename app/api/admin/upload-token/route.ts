@@ -28,6 +28,7 @@ export async function POST(req: Request) {
           "video/mp4",
           "video/quicktime",
           "video/webm",
+          "application/pdf",
         ],
         maximumSizeInBytes: MAX_BYTES,
         addRandomSuffix: true,

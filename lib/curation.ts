@@ -66,6 +66,18 @@ export const DEFAULT_HERO: HeroConfig = {
   },
 };
 
+export type SheetDifficulty = "beginner" | "intermediate" | "advanced";
+
+export type SheetEntry = {
+  id: string;
+  title: string;
+  description?: string;
+  difficulty: SheetDifficulty;
+  pdfUrl: string;
+  thumbnailUrl?: string;
+  addedAt: string;
+};
+
 export type SubmissionEntry = {
   id: string;
   title: string;
@@ -97,6 +109,7 @@ export type CurationData = {
   hashtags: HashtagEntry[];
   picks: PickEntry[];
   submissions: SubmissionEntry[];
+  sheets: SheetEntry[];
   seedManualPostsImported?: boolean;
   hero?: HeroConfig;
   homepage?: HomepageConfig;
@@ -123,15 +136,8 @@ const defaultData: CurationData = {
   hashtags: [],
   picks: [],
   submissions: [],
+  sheets: [],
 };
-
-// In-memory cache to reduce Blob list() calls (5 min TTL)
-interface CacheEntry {
-  data: CurationData;
-  expiresAt: number;
-}
-let memCache: CacheEntry | null = null;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 function useBlob(): boolean {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
@@ -155,6 +161,7 @@ async function readFromFile(): Promise<CurationData> {
       hashtags: parsed.hashtags ?? [],
       picks: parsed.picks ?? [],
       submissions: parsed.submissions ?? [],
+      sheets: parsed.sheets ?? [],
       seedManualPostsImported: parsed.seedManualPostsImported,
       hero: parsed.hero,
       homepage: parsed.homepage,
@@ -194,6 +201,7 @@ async function readFromBlob(): Promise<CurationData> {
     hashtags: parsed.hashtags ?? [],
     picks: parsed.picks ?? [],
     submissions: parsed.submissions ?? [],
+    sheets: parsed.sheets ?? [],
     seedManualPostsImported: parsed.seedManualPostsImported,
     hero: parsed.hero,
     homepage: parsed.homepage,
@@ -211,6 +219,7 @@ async function seedBlobFromLocal(): Promise<CurationData> {
       hashtags: parsed.hashtags ?? [],
       picks: parsed.picks ?? [],
       submissions: parsed.submissions ?? [],
+      sheets: parsed.sheets ?? [],
       seedManualPostsImported: parsed.seedManualPostsImported,
       hero: parsed.hero,
       homepage: parsed.homepage,
@@ -265,34 +274,12 @@ async function migrateSeedManualPosts(
 }
 
 export async function readCuration(): Promise<CurationData> {
-  // Return cached data if still valid (within 5 minutes)
-  if (memCache && memCache.expiresAt > Date.now()) {
-    return memCache.data;
-  }
-
+  // Always read from source (Blob/file). The previous in-memory cache caused
+  // stale-data inconsistencies across Vercel serverless instances after writes.
+  // Public pages are still cached at the Next.js page level (e.g. revalidate),
+  // so this does not increase Blob calls for hot paths.
   const raw = useBlob() ? await readFromBlob() : await readFromFile();
-  const data = await migrateSeedManualPosts(raw);
-
-  // Update cache
-  memCache = {
-    data,
-    expiresAt: Date.now() + CACHE_TTL,
-  };
-
-  return data;
-}
-
-async function readCurationFresh(): Promise<CurationData> {
-  // Bypass the in-memory cache and read directly from the source. Critical for
-  // read-modify-write cycles in multi-instance serverless deployments where
-  // each instance's cache can be out of sync with the latest Blob contents.
-  const raw = useBlob() ? await readFromBlob() : await readFromFile();
-  const data = await migrateSeedManualPosts(raw);
-  memCache = {
-    data,
-    expiresAt: Date.now() + CACHE_TTL,
-  };
-  return data;
+  return await migrateSeedManualPosts(raw);
 }
 
 export async function writeCuration(data: CurationData): Promise<void> {
@@ -303,10 +290,9 @@ export async function writeCuration(data: CurationData): Promise<void> {
 export async function updateCuration(
   updater: (data: CurationData) => CurationData | Promise<CurationData>,
 ): Promise<CurationData> {
-  const current = await readCurationFresh();
+  const current = await readCuration();
   const next = await updater(current);
   await writeCuration(next);
-  memCache = null; // Invalidate cache after write
   return next;
 }
 
