@@ -7,6 +7,7 @@ import type {
   SheetEntry,
   SheetProvider,
 } from "@/lib/curation";
+import { BulkUploadForm } from "./BulkUploadForm";
 
 const DIFFICULTY_OPTIONS: { value: SheetDifficulty; label: string }[] = [
   { value: "beginner", label: "初級" },
@@ -205,6 +206,8 @@ export function SheetsManager({ initial }: { initial: SheetEntry[] }) {
 
   return (
     <div className="space-y-8">
+      <BulkUploadForm onComplete={setSheets} />
+
       <form
         onSubmit={onSubmit}
         className="bg-white rounded-3xl border border-black/5 p-6 space-y-4"

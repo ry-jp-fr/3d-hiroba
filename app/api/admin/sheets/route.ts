@@ -50,6 +50,32 @@ async function safeDelBlob(url: string | undefined): Promise<void> {
   }
 }
 
+type ParsedSheet = Omit<SheetEntry, "id" | "addedAt">;
+
+function parseSheetInput(
+  input: unknown,
+): { sheet: ParsedSheet } | { error: string } {
+  const obj = (input ?? {}) as Record<string, unknown>;
+  const title = String(obj.title ?? "").trim();
+  const pdfUrl = String(obj.pdfUrl ?? "").trim();
+  const difficulty = parseDifficulty(obj.difficulty);
+  if (!title) return { error: "title_required" };
+  if (!pdfUrl) return { error: "pdf_required" };
+  if (!difficulty) return { error: "difficulty_invalid" };
+  const provider = parseProvider(obj.provider) ?? "scrib3d";
+  const description =
+    typeof obj.description === "string" && obj.description.trim()
+      ? obj.description.trim()
+      : undefined;
+  const thumbnailUrl =
+    typeof obj.thumbnailUrl === "string" && obj.thumbnailUrl.trim()
+      ? obj.thumbnailUrl.trim()
+      : undefined;
+  return {
+    sheet: { title, description, difficulty, provider, pdfUrl, thumbnailUrl },
+  };
+}
+
 export async function GET() {
   const unauth = await requireAdmin();
   if (unauth) return unauth;
@@ -61,39 +87,49 @@ export async function POST(req: Request) {
   const unauth = await requireAdmin();
   if (unauth) return unauth;
   const body = await req.json().catch(() => null);
-  const title = String(body?.title ?? "").trim();
-  const pdfUrl = String(body?.pdfUrl ?? "").trim();
-  const difficulty = parseDifficulty(body?.difficulty);
-  if (!title) {
-    return NextResponse.json({ error: "title_required" }, { status: 400 });
-  }
-  if (!pdfUrl) {
-    return NextResponse.json({ error: "pdf_required" }, { status: 400 });
-  }
-  if (!difficulty) {
-    return NextResponse.json({ error: "difficulty_invalid" }, { status: 400 });
-  }
-  const provider = parseProvider(body?.provider) ?? "scrib3d";
-  const description =
-    typeof body?.description === "string" && body.description.trim()
-      ? body.description.trim()
-      : undefined;
-  const thumbnailUrl =
-    typeof body?.thumbnailUrl === "string" && body.thumbnailUrl.trim()
-      ? body.thumbnailUrl.trim()
-      : undefined;
 
+  if (Array.isArray((body as { items?: unknown })?.items)) {
+    const items = (body as { items: unknown[] }).items;
+    if (items.length === 0) {
+      return NextResponse.json({ error: "items_empty" }, { status: 400 });
+    }
+    const parsed: ParsedSheet[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const result = parseSheetInput(items[i]);
+      if ("error" in result) {
+        return NextResponse.json(
+          { error: result.error, index: i },
+          { status: 400 },
+        );
+      }
+      parsed.push(result.sheet);
+    }
+    const now = new Date().toISOString();
+    const newSheets: SheetEntry[] = parsed.map((p) => ({
+      id: createId("sheet"),
+      ...p,
+      addedAt: now,
+    }));
+    const updated = await updateCuration((data) => ({
+      ...data,
+      sheets: [...newSheets, ...data.sheets],
+    }));
+    revalidatePath("/sheets");
+    return NextResponse.json({
+      sheets: updated.sheets,
+      created: newSheets.length,
+    });
+  }
+
+  const result = parseSheetInput(body);
+  if ("error" in result) {
+    return NextResponse.json({ error: result.error }, { status: 400 });
+  }
   const newSheet: SheetEntry = {
     id: createId("sheet"),
-    title,
-    description,
-    difficulty,
-    provider,
-    pdfUrl,
-    thumbnailUrl,
+    ...result.sheet,
     addedAt: new Date().toISOString(),
   };
-
   const updated = await updateCuration((data) => ({
     ...data,
     sheets: [newSheet, ...data.sheets],
