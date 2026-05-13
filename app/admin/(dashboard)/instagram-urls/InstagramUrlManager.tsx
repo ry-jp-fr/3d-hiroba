@@ -61,6 +61,10 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
   const [busyLabel, setBusyLabel] = useState("登録中...");
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<PickEntry> | null>(null);
+  const [editThumbFile, setEditThumbFile] = useState<File | null>(null);
+  const [editThumbPreview, setEditThumbPreview] = useState<string | null>(null);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -197,6 +201,76 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
     }
     const json = (await res.json()) as { picks: PickEntry[] };
     setPicks(json.picks.filter((x) => x.method === "instagram-url"));
+  }
+
+  function startEdit(p: PickEntry) {
+    setEditingId(p.id);
+    setEditForm({ ...p });
+    setEditThumbFile(null);
+    setEditThumbPreview(null);
+    setError(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditForm(null);
+    setEditThumbFile(null);
+    setEditThumbPreview(null);
+    setError(null);
+  }
+
+  function onEditThumbChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setEditThumbFile(file);
+    if (file) {
+      setEditThumbPreview(URL.createObjectURL(file));
+    } else {
+      setEditThumbPreview(null);
+    }
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editForm) return;
+    setBusy(true);
+    setBusyLabel("保存中...");
+    setError(null);
+    try {
+      let thumbnailUrl: string | undefined;
+      if (editThumbFile) {
+        setBusyLabel("画像をアップロード中...");
+        thumbnailUrl = await uploadThumbnail(editThumbFile);
+      }
+      const updates: Record<string, unknown> = {
+        title: editForm.title ?? "",
+        author: editForm.author ?? "",
+        authorUrl: editForm.authorUrl ?? "",
+        caption: editForm.caption ?? "",
+        pentaComment: editForm.pentaComment ?? "",
+        postedAt: editForm.postedAt ?? "",
+        tags: editForm.tags ?? [],
+      };
+      if (thumbnailUrl) updates.thumbnailUrl = thumbnailUrl;
+      const res = await fetch("/api/admin/picks", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: editingId, updates }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? "update_failed");
+      }
+      const json = (await res.json()) as { picks: PickEntry[] };
+      setPicks(json.picks.filter((p) => p.method === "instagram-url"));
+      cancelEdit();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? `編集に失敗しました: ${err.message}`
+          : "編集に失敗しました",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -401,7 +475,14 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
                       {p.embedHtml ? "埋め込みコード" : p.permalink}
                     </a>
                   )}
-                  <div className="mt-2 flex justify-end">
+                  <div className="mt-2 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(p)}
+                      className="text-xs text-brand hover:bg-brand-light px-2 py-1 rounded-full"
+                    >
+                      編集
+                    </button>
                     <button
                       type="button"
                       onClick={() => remove(p)}
@@ -416,6 +497,154 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
           </ul>
         )}
       </section>
+
+      {editingId && editForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-xl">
+                「{editForm.title ?? editForm.permalink ?? editForm.id}」を編集
+              </h2>
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="text-ink-muted hover:text-ink text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <Field
+              label="サムネイル画像を差し替える"
+              hint="新しく選ぶと、表示用のフォールバック画像が置き換わります。"
+            >
+              <div className="flex items-start gap-3">
+                {(editThumbPreview ?? editForm.thumbnailUrl ?? editForm.mediaUrl) && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={
+                      editThumbPreview ??
+                      editForm.thumbnailUrl ??
+                      editForm.mediaUrl
+                    }
+                    alt="プレビュー"
+                    className="w-20 h-20 rounded-xl object-cover bg-paper flex-shrink-0 border border-black/10"
+                  />
+                )}
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={onEditThumbChange}
+                    className="block w-full text-sm text-ink-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-light file:text-brand-dark hover:file:bg-brand-light/80"
+                  />
+                </div>
+              </div>
+            </Field>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="タイトル">
+                <input
+                  value={editForm.title ?? ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, title: e.target.value })
+                  }
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="投稿日">
+                <input
+                  type="date"
+                  value={editForm.postedAt ?? ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, postedAt: e.target.value })
+                  }
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="作者名">
+                <input
+                  value={editForm.author ?? ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, author: e.target.value })
+                  }
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="作者プロフィールURL">
+                <input
+                  type="url"
+                  value={editForm.authorUrl ?? ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, authorUrl: e.target.value })
+                  }
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+
+            <Field label="キャプション">
+              <textarea
+                value={editForm.caption ?? ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, caption: e.target.value })
+                }
+                rows={3}
+                className={inputCls}
+              />
+            </Field>
+
+            <Field label="タグ（カンマ区切り）">
+              <input
+                value={(editForm.tags ?? []).join(", ")}
+                onChange={(e) => {
+                  const tags = e.target.value
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter((t) => t.length > 0);
+                  setEditForm({ ...editForm, tags });
+                }}
+                className={inputCls}
+              />
+            </Field>
+
+            <Field label="3Dぺんたコメント">
+              <textarea
+                value={editForm.pentaComment ?? ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, pentaComment: e.target.value })
+                }
+                rows={2}
+                className={inputCls}
+              />
+            </Field>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
+
+            <div className="flex justify-end gap-2 pt-4">
+              <button
+                type="button"
+                onClick={cancelEdit}
+                disabled={busy}
+                className="rounded-full border border-black/10 px-6 py-2 text-sm font-semibold hover:bg-black/5 disabled:opacity-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={saveEdit}
+                disabled={busy}
+                className="rounded-full bg-brand text-white font-semibold px-6 py-2 text-sm hover:bg-brand-dark disabled:opacity-50"
+              >
+                {busy ? busyLabel : "保存"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
