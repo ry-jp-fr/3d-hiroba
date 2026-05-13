@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { readCuration, type SheetDifficulty } from "@/lib/curation";
+import {
+  readCuration,
+  type SheetDifficulty,
+  type SheetProvider,
+} from "@/lib/curation";
 
 export const metadata: Metadata = {
   title: "なぞりシート | 3Dひろば",
@@ -13,6 +17,11 @@ const DIFFICULTY_LABEL: Record<SheetDifficulty, string> = {
   beginner: "初級",
   intermediate: "中級",
   advanced: "上級",
+};
+
+const PROVIDER_LABEL: Record<SheetProvider, string> = {
+  scrib3d: "スクリブ3D",
+  general: "一般",
 };
 
 export default async function SheetsPage() {
@@ -62,9 +71,12 @@ export default async function SheetsPage() {
                   )}
                 </div>
                 <div className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-light text-brand-dark">
                       {DIFFICULTY_LABEL[sheet.difficulty]}
+                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-paper text-ink-muted">
+                      {PROVIDER_LABEL[sheet.provider]}
                     </span>
                   </div>
                   <h2 className="font-bold text-base text-ink group-hover:text-brand-dark transition-colors">
