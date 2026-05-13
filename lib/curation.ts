@@ -68,11 +68,14 @@ export const DEFAULT_HERO: HeroConfig = {
 
 export type SheetDifficulty = "beginner" | "intermediate" | "advanced";
 
+export type SheetProvider = "scrib3d" | "general";
+
 export type SheetEntry = {
   id: string;
   title: string;
   description?: string;
   difficulty: SheetDifficulty;
+  provider: SheetProvider;
   pdfUrl: string;
   thumbnailUrl?: string;
   addedAt: string;
@@ -273,13 +276,21 @@ async function migrateSeedManualPosts(
   return next;
 }
 
+function normalizeSheets(sheets: SheetEntry[]): SheetEntry[] {
+  return sheets.map((s) => ({
+    ...s,
+    provider: s.provider ?? "scrib3d",
+  }));
+}
+
 export async function readCuration(): Promise<CurationData> {
   // Always read from source (Blob/file). The previous in-memory cache caused
   // stale-data inconsistencies across Vercel serverless instances after writes.
   // Public pages are still cached at the Next.js page level (e.g. revalidate),
   // so this does not increase Blob calls for hot paths.
   const raw = useBlob() ? await readFromBlob() : await readFromFile();
-  return await migrateSeedManualPosts(raw);
+  const migrated = await migrateSeedManualPosts(raw);
+  return { ...migrated, sheets: normalizeSheets(migrated.sheets) };
 }
 
 export async function writeCuration(data: CurationData): Promise<void> {

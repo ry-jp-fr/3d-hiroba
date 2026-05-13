@@ -7,6 +7,7 @@ import {
   updateCuration,
   type SheetDifficulty,
   type SheetEntry,
+  type SheetProvider,
 } from "@/lib/curation";
 import { requireAdmin } from "@/lib/admin-auth";
 
@@ -18,9 +19,17 @@ const DIFFICULTIES: SheetDifficulty[] = [
   "advanced",
 ];
 
+const PROVIDERS: SheetProvider[] = ["scrib3d", "general"];
+
 function parseDifficulty(value: unknown): SheetDifficulty | null {
   return DIFFICULTIES.includes(value as SheetDifficulty)
     ? (value as SheetDifficulty)
+    : null;
+}
+
+function parseProvider(value: unknown): SheetProvider | null {
+  return PROVIDERS.includes(value as SheetProvider)
+    ? (value as SheetProvider)
     : null;
 }
 
@@ -64,6 +73,7 @@ export async function POST(req: Request) {
   if (!difficulty) {
     return NextResponse.json({ error: "difficulty_invalid" }, { status: 400 });
   }
+  const provider = parseProvider(body?.provider) ?? "scrib3d";
   const description =
     typeof body?.description === "string" && body.description.trim()
       ? body.description.trim()
@@ -78,6 +88,7 @@ export async function POST(req: Request) {
     title,
     description,
     difficulty,
+    provider,
     pdfUrl,
     thumbnailUrl,
     addedAt: new Date().toISOString(),
@@ -116,6 +127,8 @@ export async function PATCH(req: Request) {
     }
     const diff = parseDifficulty(body.difficulty);
     if (diff) next.difficulty = diff;
+    const prov = parseProvider(body.provider);
+    if (prov) next.provider = prov;
     if (typeof body.pdfUrl === "string" && body.pdfUrl.trim()) {
       if (body.pdfUrl !== existing.pdfUrl) {
         oldUrlsToDelete.push(existing.pdfUrl);

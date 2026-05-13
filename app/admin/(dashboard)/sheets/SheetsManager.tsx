@@ -2,7 +2,11 @@
 
 import { FormEvent, useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
-import type { SheetDifficulty, SheetEntry } from "@/lib/curation";
+import type {
+  SheetDifficulty,
+  SheetEntry,
+  SheetProvider,
+} from "@/lib/curation";
 
 const DIFFICULTY_OPTIONS: { value: SheetDifficulty; label: string }[] = [
   { value: "beginner", label: "初級" },
@@ -16,16 +20,28 @@ const DIFFICULTY_LABEL: Record<SheetDifficulty, string> = {
   advanced: "上級",
 };
 
+const PROVIDER_OPTIONS: { value: SheetProvider; label: string }[] = [
+  { value: "scrib3d", label: "スクリブ3D" },
+  { value: "general", label: "一般" },
+];
+
+const PROVIDER_LABEL: Record<SheetProvider, string> = {
+  scrib3d: "スクリブ3D",
+  general: "一般",
+};
+
 type FormState = {
   title: string;
   description: string;
   difficulty: SheetDifficulty;
+  provider: SheetProvider;
 };
 
 const EMPTY: FormState = {
   title: "",
   description: "",
   difficulty: "beginner",
+  provider: "scrib3d",
 };
 
 async function uploadFile(file: File): Promise<string> {
@@ -48,6 +64,7 @@ export function SheetsManager({ initial }: { initial: SheetEntry[] }) {
     title: string;
     description: string;
     difficulty: SheetDifficulty;
+    provider: SheetProvider;
   } | null>(null);
   const [editPdfFile, setEditPdfFile] = useState<File | null>(null);
   const [editThumbFile, setEditThumbFile] = useState<File | null>(null);
@@ -83,6 +100,7 @@ export function SheetsManager({ initial }: { initial: SheetEntry[] }) {
           title: form.title.trim(),
           description: form.description.trim() || undefined,
           difficulty: form.difficulty,
+          provider: form.provider,
           pdfUrl,
           thumbnailUrl,
         }),
@@ -129,6 +147,7 @@ export function SheetsManager({ initial }: { initial: SheetEntry[] }) {
       title: sheet.title,
       description: sheet.description ?? "",
       difficulty: sheet.difficulty,
+      provider: sheet.provider,
     });
     setEditPdfFile(null);
     setEditThumbFile(null);
@@ -153,6 +172,7 @@ export function SheetsManager({ initial }: { initial: SheetEntry[] }) {
         title: editForm.title.trim(),
         description: editForm.description.trim(),
         difficulty: editForm.difficulty,
+        provider: editForm.provider,
       };
       if (editPdfFile) {
         payload.pdfUrl = await uploadFile(editPdfFile);
@@ -252,6 +272,22 @@ export function SheetsManager({ initial }: { initial: SheetEntry[] }) {
           </Field>
         </div>
 
+        <Field label="提供者" required>
+          <select
+            value={form.provider}
+            onChange={(e) =>
+              set("provider", e.target.value as SheetProvider)
+            }
+            className={inputCls}
+          >
+            {PROVIDER_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+
         <Field label="説明">
           <textarea
             value={form.description}
@@ -305,12 +341,15 @@ export function SheetsManager({ initial }: { initial: SheetEntry[] }) {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold text-sm truncate">
                       {sheet.title}
                     </p>
                     <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-brand-light text-brand-dark">
                       {DIFFICULTY_LABEL[sheet.difficulty]}
+                    </span>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-paper text-ink-muted">
+                      {PROVIDER_LABEL[sheet.provider]}
                     </span>
                   </div>
                   {sheet.description && (
@@ -394,6 +433,25 @@ export function SheetsManager({ initial }: { initial: SheetEntry[] }) {
                 </select>
               </Field>
             </div>
+
+            <Field label="提供者">
+              <select
+                value={editForm.provider}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    provider: e.target.value as SheetProvider,
+                  })
+                }
+                className={inputCls}
+              >
+                {PROVIDER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
 
             <Field label="説明">
               <textarea
