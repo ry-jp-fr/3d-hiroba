@@ -1,6 +1,20 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
+import {
+  DndContext,
+  DragEndEvent,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { upload } from "@vercel/blob/client";
 import type {
   SheetDifficulty,
@@ -71,6 +85,40 @@ export function SheetsManager({ initial }: { initial: SheetEntry[] }) {
   const [editThumbFile, setEditThumbFile] = useState<File | null>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+  );
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = sheets.findIndex((s) => s.id === active.id);
+    const newIndex = sheets.findIndex((s) => s.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const previous = sheets;
+    const next = arrayMove(sheets, oldIndex, newIndex);
+    setSheets(next);
+
+    try {
+      const res = await fetch("/api/admin/sheets", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ order: next.map((s) => s.id) }),
+      });
+      if (!res.ok) {
+        setSheets(previous);
+        setError("順序の保存に失敗しました");
+      }
+    } catch {
+      setSheets(previous);
+      setError("順序の保存に失敗しました");
+    }
+  }
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -323,12 +371,22 @@ export function SheetsManager({ initial }: { initial: SheetEntry[] }) {
             まだシートがありません。
           </p>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {sheets.map((sheet) => (
-              <li
-                key={sheet.id}
-                className="flex gap-3 bg-white rounded-2xl border border-black/5 p-3"
-              >
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={sheets.map((s) => s.id)}
+              strategy={rectSortingStrategy}
+            >
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {sheets.map((sheet) => (
+                  <SortableItem
+                    key={sheet.id}
+                    id={sheet.id}
+                    className="flex gap-3 bg-white rounded-2xl border border-black/5 p-3"
+                  >
                 <div className="w-20 h-20 rounded-xl bg-paper overflow-hidden flex-shrink-0 flex items-center justify-center">
                   {sheet.thumbnailUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -385,9 +443,11 @@ export function SheetsManager({ initial }: { initial: SheetEntry[] }) {
                     </button>
                   </div>
                 </div>
-              </li>
-            ))}
-          </ul>
+                  </SortableItem>
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
         )}
       </section>
 
@@ -548,4 +608,48 @@ function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function arrayMove<T>(array: T[], from: number, to: number): T[] {
+  const next = [...array];
+  const item = next.splice(from, 1)[0];
+  next.splice(to, 0, item);
+  return next;
+}
+
+function SortableItem({
+  id,
+  className,
+  children,
+}: {
+  id: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`${className ?? ""} cursor-grab active:cursor-grabbing ${
+        isDragging ? "scale-95" : ""
+      }`}
+    >
+      {children}
+    </li>
+  );
 }

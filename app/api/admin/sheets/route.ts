@@ -142,6 +142,21 @@ export async function PATCH(req: Request) {
   const unauth = await requireAdmin();
   if (unauth) return unauth;
   const body = await req.json().catch(() => null);
+
+  if (Array.isArray((body as { order?: unknown })?.order)) {
+    const order = (body as { order: string[] }).order;
+    const updated = await updateCuration((data) => {
+      const idSet = new Set(order);
+      const ordered = order
+        .map((id) => data.sheets.find((s) => s.id === id))
+        .filter((s): s is SheetEntry => s !== undefined);
+      const remaining = data.sheets.filter((s) => !idSet.has(s.id));
+      return { ...data, sheets: [...ordered, ...remaining] };
+    });
+    revalidatePath("/sheets");
+    return NextResponse.json({ sheets: updated.sheets });
+  }
+
   const id = String(body?.id ?? "");
   if (!id) {
     return NextResponse.json({ error: "id_required" }, { status: 400 });
