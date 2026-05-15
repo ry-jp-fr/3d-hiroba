@@ -50,7 +50,7 @@ PRIMARY USE: Community Gallery Display
 - Collect: Administrator selects Instagram post via URL
 - Fetch: App calls oEmbed API to retrieve post metadata
 - Store: Post data stored in database, thumbnail stored in Vercel Blob
-- Display: Post shown in community gallery on 3d-hiroba.vercel.app homepage
+- Display: Post shown in community gallery on www.3d-hiroba.jp homepage
 - Duration: Post remains in gallery until administrator removes it
 
 SECONDARY USES:
@@ -163,13 +163,13 @@ Compliance with:
 ✓ Instagram Graph API Terms of Service
 
 Privacy Policy:
-- Published at: https://3d-hiroba.vercel.app/privacy
+- Published at: https://www.3d-hiroba.jp/privacy
 - Updated: Regularly (users notified of changes)
 - Available in: Japanese & English
 
 Contact / Support:
 - Email: help@scrib3dpen.jp
-- Form: https://3d-hiroba.vercel.app/contact
+- Form: https://www.3d-hiroba.jp/contact
 - Response time: Within 7 business days
 
 ---
@@ -240,8 +240,8 @@ QUESTIONS & CONTACT
 For questions about this Data Use Statement:
 
 Email: help@scrib3dpen.jp
-Form: https://3d-hiroba.vercel.app/contact
-Website: https://3d-hiroba.vercel.app/privacy
+Form: https://www.3d-hiroba.jp/contact
+Website: https://www.3d-hiroba.jp/privacy
 
 For Meta-specific questions:
 - Meta Developer Portal: https://developers.facebook.com/docs/instagram-api/

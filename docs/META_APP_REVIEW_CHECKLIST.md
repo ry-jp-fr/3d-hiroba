@@ -14,12 +14,12 @@ This document outlines the configuration required in the Meta Developer Dashboar
   - `FACEBOOK_APP_SECRET`
 
 ### ✅ Legal Requirements
-- [x] Privacy Policy Published: https://3d-hiroba.vercel.app/privacy
+- [x] Privacy Policy Published: https://www.3d-hiroba.jp/privacy
   - Bilingual (Japanese/English)
   - robots: noindex, nofollow
   - Sections: data collection, usage, storage, third parties, cookies, rights, security
   
-- [x] Contact Information Available: https://3d-hiroba.vercel.app/contact
+- [x] Contact Information Available: https://www.3d-hiroba.jp/contact
   - Contact form for privacy questions
   - Direct email: help@scrib3dpen.jp
   
@@ -35,14 +35,14 @@ This document outlines the configuration required in the Meta Developer Dashboar
 - **App Name**: 3D Hiroba
 - **App Type**: Consumer
 - **Category**: Photography, Art, Culture
-- **App Domain**: 3d-hiroba.vercel.app
+- **App Domain**: www.3d-hiroba.jp
 - **App Domains**: 
-  - 3d-hiroba.vercel.app
-  - vercel.app
+  - www.3d-hiroba.jp
+  - 3d-hiroba.jp
 
 #### 3. Add Privacy Policy URL
 - Go to Settings → Basic
-- **Privacy Policy URL**: https://3d-hiroba.vercel.app/privacy
+- **Privacy Policy URL**: https://www.3d-hiroba.jp/privacy
 - **Data Use Statement**: See below
 
 #### 4. Configure Instagram Product
@@ -185,7 +185,7 @@ Yes. The application complies with:
 **Solution**: Ensure app is in Development mode initially. Request Live Mode only after approval.
 
 ### "Invalid App Domain"
-**Solution**: Domain must match exactly. Use: `3d-hiroba.vercel.app` (not with http://)
+**Solution**: Domain must match exactly. Use: `www.3d-hiroba.jp` (not with http://)
 
 ### "Permission not approved"
 **Solution**: Submit for review with proper use case description and demo video.

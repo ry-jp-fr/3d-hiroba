@@ -76,7 +76,7 @@ Based on Meta's standard app review process, the rejection was likely due to one
 - **Reason**: Meta requires an endpoint to send deauthorization requests
 - **What was missing**: `/api/instagram/deauthorize` endpoint
 - **Solution implemented**: Added POST endpoint to handle Meta deauthorization requests
-- **Configuration for Meta Dashboard**: `https://3d-hiroba.vercel.app/api/instagram/deauthorize`
+- **Configuration for Meta Dashboard**: `https://www.3d-hiroba.jp/api/instagram/deauthorize`
 
 ### 2. **Incomplete Contact Form**
 - **Reason**: Contact form must actually deliver messages (not just log)
@@ -105,7 +105,7 @@ Before resubmission, verify these settings:
 
 ```
 ✅ Settings > Basic
-   - Privacy Policy URL: https://3d-hiroba.vercel.app/privacy
+   - Privacy Policy URL: https://www.3d-hiroba.jp/privacy
    - App Mode: Development (switch to Live after approval)
    - Category: Photography / Art / Culture
 
@@ -118,7 +118,7 @@ Before resubmission, verify these settings:
    - Test user created (if needed)
 
 ⚠️ Deauthorization Settings (NEW)
-   - Callback URL: https://3d-hiroba.vercel.app/api/instagram/deauthorize
+   - Callback URL: https://www.3d-hiroba.jp/api/instagram/deauthorize
    - Method: POST
    - Status: Ready for approval
 
@@ -163,13 +163,13 @@ with Instagram Platform Policy and Meta Data Use Restrictions.
 - See `docs/TEST_CREDENTIALS.md`
 
 **Privacy Policy URL**:
-- https://3d-hiroba.vercel.app/privacy
+- https://www.3d-hiroba.jp/privacy
 
 **Data Deletion URL**:
-- https://3d-hiroba.vercel.app/data-deletion
+- https://www.3d-hiroba.jp/data-deletion
 
 **Deauthorization Callback URL**:
-- https://3d-hiroba.vercel.app/api/instagram/deauthorize
+- https://www.3d-hiroba.jp/api/instagram/deauthorize
 
 ---
 
@@ -177,9 +177,9 @@ with Instagram Platform Policy and Meta Data Use Restrictions.
 
 For Meta's records:
 - **Support Email**: help@scrib3dpen.jp
-- **Website**: https://3d-hiroba.vercel.app
-- **Privacy Policy**: https://3d-hiroba.vercel.app/privacy
-- **Contact Form**: https://3d-hiroba.vercel.app/contact
+- **Website**: https://www.3d-hiroba.jp
+- **Privacy Policy**: https://www.3d-hiroba.jp/privacy
+- **Contact Form**: https://www.3d-hiroba.jp/contact
 
 ---
 

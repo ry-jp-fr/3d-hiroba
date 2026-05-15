@@ -9,8 +9,8 @@
 ## Test Environment Access
 
 ### Website Credentials
-- **Production URL**: https://3d-hiroba.vercel.app
-- **Admin Console**: https://3d-hiroba.vercel.app/admin
+- **Production URL**: https://www.3d-hiroba.jp
+- **Admin Console**: https://www.3d-hiroba.jp/admin
 - **Test Account Email**: (provided upon request)
 - **Test Account Password**: (provided via secure channel)
 
@@ -26,7 +26,7 @@
 ## Test Account Setup
 
 ### Admin Account
-- **Username/Email**: test-admin@3d-hiroba.vercel.app
+- **Username/Email**: test-admin@3d-hiroba.jp
 - **Password**: [Provided separately via Meta Dashboard]
 - **Role**: Administrator
 - **Permissions**: 
@@ -53,7 +53,7 @@ Test the following scenarios in order:
 **Objective**: Verify the gallery displays correctly
 
 **Steps**:
-1. Navigate to https://3d-hiroba.vercel.app
+1. Navigate to https://www.3d-hiroba.jp
 2. Scroll to the gallery section
 3. Verify:
    - ✅ Multiple post cards visible
@@ -76,9 +76,9 @@ Test the following scenarios in order:
 **Objective**: Verify admin authentication works
 
 **Steps**:
-1. Navigate to https://3d-hiroba.vercel.app/admin
+1. Navigate to https://www.3d-hiroba.jp/admin
 2. Enter test credentials:
-   - Email: test-admin@3d-hiroba.vercel.app
+   - Email: test-admin@3d-hiroba.jp
    - Password: [as provided]
 3. Click "Log In"
 4. Verify:
@@ -176,7 +176,7 @@ Test the following scenarios in order:
 **Objective**: Verify gallery displays all posts correctly
 
 **Steps**:
-1. Navigate to https://3d-hiroba.vercel.app
+1. Navigate to https://www.3d-hiroba.jp
 2. Look for both oEmbed and manually uploaded posts
 3. Verify:
    - ✅ All post types display in same card format
@@ -206,7 +206,7 @@ Test the following scenarios in order:
 **Objective**: Verify privacy documentation and user contact flow
 
 **Steps**:
-1. Navigate to https://3d-hiroba.vercel.app/privacy
+1. Navigate to https://www.3d-hiroba.jp/privacy
 2. Verify:
    - ✅ Privacy policy displays in Japanese
    - ✅ All sections visible (data collection, usage, storage, etc.)
@@ -216,7 +216,7 @@ Test the following scenarios in order:
    - ✅ English version displays correctly
    - ✅ Same content structure
    - ✅ Professional tone and complete information
-5. Navigate to https://3d-hiroba.vercel.app/contact
+5. Navigate to https://www.3d-hiroba.jp/contact
 6. Fill in contact form:
    - Name: "Meta Reviewer"
    - Email: "reviewer@meta.example.com"
@@ -248,7 +248,7 @@ Test the following scenarios in order:
 **Objective**: Verify application works on mobile devices
 
 **Steps**:
-1. Open https://3d-hiroba.vercel.app on mobile device (iOS Safari or Android Chrome)
+1. Open https://www.3d-hiroba.jp on mobile device (iOS Safari or Android Chrome)
    - Or: Use Chrome DevTools → Toggle Device Toolbar (F12)
 2. Verify:
    - ✅ Homepage loads correctly
@@ -294,9 +294,9 @@ Example (public test account):
 - All changes are temporary (production not affected)
 
 ### Screenshot Locations
-- Gallery: https://3d-hiroba.vercel.app (screenshot homepage)
-- Admin console: https://3d-hiroba.vercel.app/admin (logged in)
-- Privacy: https://3d-hiroba.vercel.app/privacy
+- Gallery: https://www.3d-hiroba.jp (screenshot homepage)
+- Admin console: https://www.3d-hiroba.jp/admin (logged in)
+- Privacy: https://www.3d-hiroba.jp/privacy
 
 ---
 
@@ -400,8 +400,8 @@ A: Document it and contact help@scrib3dpen.jp with details.
 - App Dashboard: https://developers.facebook.com/apps/26224957440539490
 
 **For Privacy Concerns**:
-- Privacy Policy: https://3d-hiroba.vercel.app/privacy
-- Contact Form: https://3d-hiroba.vercel.app/contact
+- Privacy Policy: https://www.3d-hiroba.jp/privacy
+- Contact Form: https://www.3d-hiroba.jp/contact
 
 ---
 
