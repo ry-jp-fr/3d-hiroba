@@ -25,13 +25,13 @@
 
 ### SCENE 1: Homepage & Gallery Overview (0:00 - 0:30)
 
-**Visual**: Record browser on 3d-hiroba.vercel.app
+**Visual**: Record browser on www.3d-hiroba.jp
 
 **Narration** (English/Japanese):
 > "3D Hiroba is a community gallery where parents and children share their 3D pen creations. Our application features a curated collection of the best posts from Instagram, displayed in a unified gallery format."
 
 **Actions**:
-1. Load https://3d-hiroba.vercel.app
+1. Load https://www.3d-hiroba.jp
 2. Scroll down to show gallery section
 3. Show several card tiles with images and titles
 4. Click on one card to show Instagram link (opens in new tab)
@@ -52,7 +52,7 @@
 > "The admin console allows curators to manage featured posts. Let me show you the registration interface where posts are added from Instagram."
 
 **Actions**:
-1. Navigate to https://3d-hiroba.vercel.app/admin
+1. Navigate to https://www.3d-hiroba.jp/admin
 2. Log in with test credentials:
    - Email: (show email field)
    - Password: (type password, don't show in video)
@@ -124,7 +124,7 @@
 > "Once registered, the post appears immediately in the community gallery. All posts are displayed in a consistent, unified format - whether they come from Instagram or manual uploads. Users can click any post to visit the original on Instagram."
 
 **Actions**:
-1. Navigate back to https://3d-hiroba.vercel.app
+1. Navigate back to https://www.3d-hiroba.jp
 2. Scroll to gallery section (may need to refresh to see new post)
 3. Locate the newly added post in the grid
 4. Show that it matches the design of other posts
@@ -151,7 +151,7 @@
 > "3D Hiroba takes user privacy and data protection seriously. Let me show you our privacy policy and contact page where users can request data deletion or ask questions about their information."
 
 **Actions**:
-1. Navigate to https://3d-hiroba.vercel.app/privacy
+1. Navigate to https://www.3d-hiroba.jp/privacy
 2. Show:
    - Language toggle (click "English" to show bilingual support)
    - Scroll through privacy policy sections:
@@ -160,7 +160,7 @@
      - Storage & Security
      - Third-Party Access (none)
      - User Rights
-3. Navigate to https://3d-hiroba.vercel.app/contact
+3. Navigate to https://www.3d-hiroba.jp/contact
 4. Show contact form fields:
    - Name, Email, Subject (dropdown), Message
 5. Fill in a sample question about privacy:
