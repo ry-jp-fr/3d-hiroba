@@ -8,6 +8,7 @@ import {
   type PickMediaType,
   type SubmissionEntry,
 } from "@/lib/curation";
+import { getSubmissionMediaUrls } from "@/lib/submission-media";
 import { requireAdmin } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
@@ -97,15 +98,18 @@ function inferMediaType(url: string | undefined): PickMediaType {
   return "image";
 }
 
-function buildPickFromSubmission(sub: SubmissionEntry): PickEntry {
-  const useUpload = Boolean(sub.imageUrl);
+function buildPickForMedia(
+  sub: SubmissionEntry,
+  mediaUrl: string | undefined,
+): PickEntry {
+  const useUpload = Boolean(mediaUrl);
   return {
     id: createId(useUpload ? "manual" : "url"),
     method: useUpload ? "manual-upload" : "instagram-url",
     title: sub.title,
     author: sub.name,
-    mediaType: useUpload ? inferMediaType(sub.imageUrl) : "image",
-    mediaUrl: sub.imageUrl,
+    mediaType: useUpload ? inferMediaType(mediaUrl) : "image",
+    mediaUrl,
     caption: sub.notes,
     tags: [],
     permalink: sub.instagramUrl,
@@ -126,10 +130,16 @@ export async function POST(req: Request) {
   if (!id) {
     return NextResponse.json({ error: "id_required" }, { status: 400 });
   }
+  const selectedMediaUrls: string[] | null = Array.isArray(body?.mediaUrls)
+    ? body.mediaUrls
+        .map((u: unknown) => (typeof u === "string" ? u.trim() : ""))
+        .filter((u: string) => u.length > 0)
+    : null;
 
   try {
     let conflict = false;
     let missing = false;
+    let noMediaSelected = false;
     const updated = await updateCuration((data) => {
       const target = data.submissions.find((s) => s.id === id);
       if (!target) {
@@ -140,12 +150,34 @@ export async function POST(req: Request) {
         conflict = true;
         return data;
       }
-      const pick = buildPickFromSubmission(target);
+      const submissionMedia = getSubmissionMediaUrls(target);
+      const allowed = new Set(submissionMedia);
+      const chosen =
+        selectedMediaUrls !== null
+          ? selectedMediaUrls.filter((u) => allowed.has(u))
+          : submissionMedia;
+
+      const picks: PickEntry[] =
+        chosen.length > 0
+          ? chosen.map((url) => buildPickForMedia(target, url))
+          : [buildPickForMedia(target, undefined)];
+
+      if (selectedMediaUrls !== null && chosen.length === 0 && submissionMedia.length > 0) {
+        noMediaSelected = true;
+        return data;
+      }
+
       return {
         ...data,
-        picks: [pick, ...data.picks],
+        picks: [...picks, ...data.picks],
         submissions: data.submissions.map((s) =>
-          s.id === id ? { ...s, approvedPickId: pick.id } : s,
+          s.id === id
+            ? {
+                ...s,
+                approvedPickId: picks[0].id,
+                approvedPickIds: picks.map((p) => p.id),
+              }
+            : s,
         ),
       };
     });
@@ -155,6 +187,12 @@ export async function POST(req: Request) {
     }
     if (conflict) {
       return NextResponse.json({ error: "already_approved" }, { status: 409 });
+    }
+    if (noMediaSelected) {
+      return NextResponse.json(
+        { error: "no_media_selected", message: "掲載するメディアを1つ以上選んでください" },
+        { status: 400 },
+      );
     }
     revalidatePath("/");
     return NextResponse.json({ submissions: updated.submissions });

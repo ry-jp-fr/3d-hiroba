@@ -3,11 +3,19 @@
 import { useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 
+const MAX_FILES = 10;
+const VIDEO_EXT = /\.(mp4|webm|mov|m4v)(\?|$)/i;
+
+type UploadedMedia = {
+  url: string;
+  name: string;
+};
+
 type FormData = {
   title: string;
   name: string;
   email: string;
-  imageUrl?: string;
+  mediaUrls: UploadedMedia[];
   instagramUrl?: string;
   notes?: string;
   consent: boolean;
@@ -15,7 +23,12 @@ type FormData = {
 };
 
 type FormErrors = {
-  [key in keyof FormData]?: string;
+  title?: string;
+  name?: string;
+  email?: string;
+  media?: string;
+  consent?: string;
+  parentalConsent?: string;
 };
 
 export function SubmissionForm() {
@@ -23,7 +36,7 @@ export function SubmissionForm() {
     title: "",
     name: "",
     email: "",
-    imageUrl: "",
+    mediaUrls: [],
     instagramUrl: "",
     notes: "",
     consent: false,
@@ -37,42 +50,63 @@ export function SubmissionForm() {
     text: string;
   } | null>(null);
 
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [uploadingCount, setUploadingCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isUploading = uploadingCount > 0;
 
-  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleFilesAdd(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (files.length === 0) return;
 
-    setIsUploading(true);
-    setErrors((prev) => ({ ...prev, imageUrl: undefined }));
-
-    try {
-      const blob = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/submissions/upload-token",
-      });
-      setFormData((prev) => ({ ...prev, imageUrl: blob.url }));
-      setUploadedFileName(file.name);
-    } catch (err) {
+    const remaining = MAX_FILES - formData.mediaUrls.length;
+    if (remaining <= 0) {
       setErrors((prev) => ({
         ...prev,
-        imageUrl:
-          err instanceof Error
-            ? `アップロードに失敗しました: ${err.message}`
-            : "アップロードに失敗しました",
+        media: `アップロードできるのは最大 ${MAX_FILES} 件までです`,
       }));
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    } finally {
-      setIsUploading(false);
+      return;
+    }
+    const toUpload = files.slice(0, remaining);
+    if (files.length > remaining) {
+      setErrors((prev) => ({
+        ...prev,
+        media: `${MAX_FILES} 件を超えた分はスキップしました`,
+      }));
+    } else {
+      setErrors((prev) => ({ ...prev, media: undefined }));
+    }
+
+    for (const file of toUpload) {
+      setUploadingCount((c) => c + 1);
+      try {
+        const blob = await upload(file.name, file, {
+          access: "public",
+          handleUploadUrl: "/api/submissions/upload-token",
+        });
+        setFormData((prev) => ({
+          ...prev,
+          mediaUrls: [...prev.mediaUrls, { url: blob.url, name: file.name }],
+        }));
+      } catch (err) {
+        setErrors((prev) => ({
+          ...prev,
+          media:
+            err instanceof Error
+              ? `「${file.name}」のアップロードに失敗しました: ${err.message}`
+              : `「${file.name}」のアップロードに失敗しました`,
+        }));
+      } finally {
+        setUploadingCount((c) => c - 1);
+      }
     }
   }
 
-  function clearUploadedFile() {
-    setFormData((prev) => ({ ...prev, imageUrl: "" }));
-    setUploadedFileName(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  function removeUploadedFile(url: string) {
+    setFormData((prev) => ({
+      ...prev,
+      mediaUrls: prev.mediaUrls.filter((m) => m.url !== url),
+    }));
   }
 
   const validateForm = (): boolean => {
@@ -92,9 +126,12 @@ export function SubmissionForm() {
       newErrors.email = "有効なメールアドレスを入力してください";
     }
 
-    // Check that at least one of image or instagram URL is provided
-    if (!formData.imageUrl?.trim() && !formData.instagramUrl?.trim()) {
-      newErrors.imageUrl =
+    // Check that at least one media or instagram URL is provided
+    if (
+      formData.mediaUrls.length === 0 &&
+      !formData.instagramUrl?.trim()
+    ) {
+      newErrors.media =
         "作品画像・動画またはInstagram投稿URLのどちらかを入力してください";
     }
 
@@ -121,10 +158,21 @@ export function SubmissionForm() {
     setSubmitMessage(null);
 
     try {
+      const mediaUrls = formData.mediaUrls.map((m) => m.url);
       const res = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          title: formData.title,
+          name: formData.name,
+          email: formData.email,
+          mediaUrls,
+          imageUrl: mediaUrls[0],
+          instagramUrl: formData.instagramUrl,
+          notes: formData.notes,
+          consent: formData.consent,
+          parentalConsent: formData.parentalConsent,
+        }),
       });
 
       if (!res.ok) {
@@ -142,13 +190,12 @@ export function SubmissionForm() {
         title: "",
         name: "",
         email: "",
-        imageUrl: "",
+        mediaUrls: [],
         instagramUrl: "",
         notes: "",
         consent: false,
         parentalConsent: false,
       });
-      setUploadedFileName(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
       setSubmitMessage({
@@ -242,39 +289,52 @@ export function SubmissionForm() {
 
           <div>
             <label htmlFor="imageFile" className="block text-xs font-semibold text-ink mb-2">
-              作品画像・動画をアップロード
+              作品画像・動画をアップロード（最大 {MAX_FILES} 件）
             </label>
-            {uploadedFileName ? (
-              <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-2">
-                <svg
-                  className="w-5 h-5 text-green-600 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                <span className="text-sm text-ink truncate flex-1">{uploadedFileName}</span>
-                <button
-                  type="button"
-                  onClick={clearUploadedFile}
-                  className="text-xs text-ink-muted hover:text-ink"
-                >
-                  削除
-                </button>
-              </div>
-            ) : (
+
+            {formData.mediaUrls.length > 0 && (
+              <ul className="mb-3 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {formData.mediaUrls.map((m) => (
+                  <li
+                    key={m.url}
+                    className="relative aspect-square rounded-lg overflow-hidden bg-paper border border-black/10"
+                  >
+                    {VIDEO_EXT.test(m.url) ? (
+                      <video
+                        src={m.url}
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={m.url}
+                        alt={m.name}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeUploadedFile(m.url)}
+                      aria-label={`${m.name} を削除`}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-xs leading-none flex items-center justify-center hover:bg-black/80"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {formData.mediaUrls.length < MAX_FILES && (
               <input
                 id="imageFile"
                 ref={fileInputRef}
                 type="file"
+                multiple
                 accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
-                onChange={handleFileSelect}
+                onChange={handleFilesAdd}
                 disabled={isUploading}
                 className="block w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-brand-light file:text-brand-dark file:font-semibold hover:file:bg-brand-light/70 file:cursor-pointer disabled:opacity-50"
               />
@@ -283,7 +343,7 @@ export function SubmissionForm() {
               <p className="mt-2 text-xs text-ink-muted">アップロード中...</p>
             )}
             <p className="mt-1 text-[11px] text-ink-muted">
-              対応形式：画像（JPEG, PNG, WebP, GIF）/ 動画（MP4, MOV, WebM）/ 最大50MB
+              対応形式：画像（JPEG, PNG, WebP, GIF）/ 動画（MP4, MOV, WebM）/ 各ファイル最大50MB
             </p>
           </div>
 
@@ -301,15 +361,15 @@ export function SubmissionForm() {
               value={formData.instagramUrl || ""}
               onChange={(e) => {
                 setFormData({ ...formData, instagramUrl: e.target.value });
-                if (errors.imageUrl) setErrors({ ...errors, imageUrl: undefined });
+                if (errors.media) setErrors({ ...errors, media: undefined });
               }}
               placeholder="https://instagram.com/p/..."
               className="w-full rounded-lg border border-black/10 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
 
-          {errors.imageUrl && (
-            <p className="text-xs text-red-500">{errors.imageUrl}</p>
+          {errors.media && (
+            <p className="text-xs text-red-500">{errors.media}</p>
           )}
         </div>
 

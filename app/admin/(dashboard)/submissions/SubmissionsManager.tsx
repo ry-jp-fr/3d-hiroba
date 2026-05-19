@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { SubmissionEntry } from "@/lib/curation";
+import { getSubmissionMediaUrls } from "@/lib/submission-media";
 
 const VIDEO_EXT = /\.(mp4|webm|mov|m4v)(\?|$)/i;
 
@@ -36,6 +37,22 @@ export function SubmissionsManager({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditDraft>({ title: "", name: "" });
+  const [selectedMedia, setSelectedMedia] = useState<Record<string, Set<string>>>({});
+
+  function getSelected(s: SubmissionEntry): Set<string> {
+    const current = selectedMedia[s.id];
+    if (current) return current;
+    return new Set(getSubmissionMediaUrls(s));
+  }
+
+  function toggleMedia(s: SubmissionEntry, url: string) {
+    setSelectedMedia((prev) => {
+      const current = new Set(prev[s.id] ?? getSubmissionMediaUrls(s));
+      if (current.has(url)) current.delete(url);
+      else current.add(url);
+      return { ...prev, [s.id]: current };
+    });
+  }
 
   function startEdit(s: SubmissionEntry) {
     setEditingId(s.id);
@@ -81,13 +98,30 @@ export function SubmissionsManager({
 
   async function approve(s: SubmissionEntry) {
     if (s.approvedPickId) return;
-    if (!confirm(`「${s.title}」を承認してギャラリーに掲載しますか？`)) return;
+    const submissionMedia = getSubmissionMediaUrls(s);
+    const selected = Array.from(getSelected(s)).filter((u) =>
+      submissionMedia.includes(u),
+    );
+    if (submissionMedia.length > 0 && selected.length === 0) {
+      setError("掲載するメディアを1つ以上選んでください");
+      return;
+    }
+    const count = selected.length;
+    const promptText =
+      count > 1
+        ? `「${s.title}」を承認し、${count} 件のメディアをギャラリーに掲載しますか？`
+        : `「${s.title}」を承認してギャラリーに掲載しますか？`;
+    if (!confirm(promptText)) return;
     setBusyId(s.id);
     setError(null);
     const res = await fetch("/api/admin/submissions", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "approve", id: s.id }),
+      body: JSON.stringify({
+        action: "approve",
+        id: s.id,
+        mediaUrls: selected,
+      }),
     });
     setBusyId(null);
     if (!res.ok) {
@@ -137,34 +171,68 @@ export function SubmissionsManager({
         {items.map((s) => {
           const approved = Boolean(s.approvedPickId);
           const busy = busyId === s.id;
+          const mediaUrls = getSubmissionMediaUrls(s);
+          const selected = getSelected(s);
           return (
             <li
               key={s.id}
               className="bg-white rounded-2xl border border-black/5 p-5 flex flex-col sm:flex-row gap-4"
             >
-              <div className="sm:w-36 shrink-0">
-                {s.imageUrl ? (
-                  isVideo(s.imageUrl) ? (
-                    <video
-                      src={s.imageUrl}
-                      className="w-full aspect-square object-cover rounded-xl bg-black/5"
-                      muted
-                      playsInline
-                    />
-                  ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={s.imageUrl}
-                      alt={s.title}
-                      className="w-full aspect-square object-cover rounded-xl bg-black/5"
-                    />
-                  )
+              <div className="sm:w-48 shrink-0">
+                {mediaUrls.length > 0 ? (
+                  <ul className="grid grid-cols-2 gap-2">
+                    {mediaUrls.map((url) => {
+                      const isSelected = selected.has(url);
+                      return (
+                        <li key={url} className="relative">
+                          <label
+                            className={`block cursor-pointer rounded-xl overflow-hidden border-2 transition-colors ${
+                              approved
+                                ? "border-transparent"
+                                : isSelected
+                                  ? "border-brand"
+                                  : "border-transparent opacity-50"
+                            }`}
+                          >
+                            {!approved && (
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleMedia(s, url)}
+                                className="absolute top-1 left-1 z-10 w-4 h-4 cursor-pointer"
+                              />
+                            )}
+                            {isVideo(url) ? (
+                              <video
+                                src={url}
+                                className="w-full aspect-square object-cover bg-black/5"
+                                muted
+                                playsInline
+                              />
+                            ) : (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={url}
+                                alt={s.title}
+                                className="w-full aspect-square object-cover bg-black/5"
+                              />
+                            )}
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 ) : (
                   <div className="w-full aspect-square rounded-xl bg-paper border border-dashed border-black/10 flex items-center justify-center text-xs text-ink-muted text-center px-2">
                     Instagram
                     <br />
                     投稿URL
                   </div>
+                )}
+                {mediaUrls.length > 1 && !approved && (
+                  <p className="mt-2 text-[10px] text-ink-muted">
+                    チェック中 {selected.size} / {mediaUrls.length} 件を掲載
+                  </p>
                 )}
               </div>
 
