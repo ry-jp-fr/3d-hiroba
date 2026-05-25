@@ -1,266 +1,140 @@
 # Meta App Review Implementation Summary
 
-## 📅 Date: 2026-05-07
-## Status: ✅ Ready for Resubmission
+**Date**: 2026-05-25
+**Status**: Ready for re-submission to **Meta oEmbed Read**
 
 ---
 
 ## Overview
 
-This document summarizes the implementation of all required components for Meta/Instagram app review of the Instagram oEmbed API integration in 3D Hiroba.
+3D Hiroba calls the Meta oEmbed Read endpoint to obtain the official
+Instagram embed HTML for each curated post, and renders it inside a modal
+dialog. The gallery grid shows only a small thumbnail derived from the
+public post page's `og:image` meta tag; the thumbnail is cached for 7
+days at a time and deleted on pick removal.
 
-### Current Status
-
-- **App Status**: Development mode (ready to switch to Live after approval)
 - **App ID**: 26224957440539490
-- **API Version**: Instagram Graph API v18.0 (oEmbed endpoint)
-- **Deployment**: Production (Vercel)
+- **API Version**: v19.0 (`graph.facebook.com/v19.0/instagram_oembed`)
+- **Feature requested**: Meta oEmbed Read (the legacy "oEmbed Read" was
+  retired 2025-10-01)
+- **Deployment**: Vercel (production at https://www.3d-hiroba.jp)
 
 ---
 
-## ✅ Completed Implementation
+## What changed since the previous (rejected) submission
 
-### 1. Legal & Compliance Pages
-
-| Component | Location | Status | Notes |
-|-----------|----------|--------|-------|
-| **Privacy Policy** | `/app/privacy/page.tsx` | ✅ Complete | Bilingual (JP/EN), Meta Dashboard compliant |
-| **Data Deletion** | `/app/data-deletion/page.tsx` | ✅ Complete | User-facing deletion instructions |
-| **Contact Form** | `/app/contact/page.tsx` | ✅ Complete | Email validation, form submission logging |
-| **Footer Legal Links** | `/components/SiteFooter.tsx` | ✅ Complete | Privacy Policy + Contact links visible |
-
-### 2. API Endpoints
-
-| Endpoint | Purpose | Status | Implementation |
-|----------|---------|--------|-----------------|
-| **POST `/api/instagram/deauthorize`** | Deauthorization callback | ✅ NEW | Accepts Meta POST requests, logs user_id |
-| **GET `/api/instagram`** | Instagram posts fetch | ✅ Existing | Cache-enabled endpoint |
-| **POST `/api/admin/picks`** | Add Instagram posts | ✅ Existing | oEmbed API + Blob storage integration |
-
-### 3. Instagram oEmbed Integration
-
-**File**: `/lib/og-image.ts`
-
-```typescript
-fetchInstagramOgImage(permalink) 
-  ├─ Uses Facebook Graph API v18.0
-  ├─ Authenticates with APP_ID|APP_SECRET
-  ├─ Extracts thumbnail_url from oEmbed response
-  └─ Returns image URL or null
-
-downloadAndStoreImage(imageUrl, shortcode)
-  ├─ Fetches image from URL
-  ├─ Saves to Vercel Blob (`picks/{shortcode}.jpg`)
-  ├─ Returns persistent Blob URL
-  └─ Fallback: returns original URL if BLOB_READ_WRITE_TOKEN unset
-```
-
-**Status**: ✅ Fully functional with error handling
-
-### 4. Environment Configuration
-
-**Current Setup**:
-- `FACEBOOK_APP_ID` - Set in Vercel production environment
-- `FACEBOOK_APP_SECRET` - Set in Vercel production environment (rotated)
-- `BLOB_READ_WRITE_TOKEN` - Set for Vercel Blob access
-
-**Updated**: `.env.example` with Meta app credentials documentation
+| Change | Why |
+|---|---|
+| Migrated to **Meta oEmbed Read** feature | Legacy "oEmbed Read" retired 2025-10-01. |
+| Stopped requesting `thumbnail_url`/`author_name`/`author_url`/`title` from oEmbed | These fields were removed from oEmbed responses 2025-11-03. |
+| Detail modal now renders the **official Instagram embed** via `embed.js` | Addresses 1.6 (use case invalid): the embed is the genuine, untouched Instagram render. |
+| Thumbnail is `og:image` from the public post page, cached for 7 days, refreshed by Vercel Cron, deleted on pick removal | Replaces the previous "persistent" Blob copy of oEmbed thumbnail_url; satisfies TOS 1.3 by treating the cache as transient. |
+| API version bumped to v19.0 | v18.0 is being deprecated. |
+| Use Case Description rewritten | Removed trigger words "unified gallery format" and "persistent availability". |
 
 ---
 
-## 🔍 Likely Causes of Previous Rejection
+## Implementation
 
-Based on Meta's standard app review process, the rejection was likely due to one or more of these factors:
+### `lib/og-image.ts`
 
-### 1. **Missing Deauthorization Callback URL** ⚠️ FIXED
-- **Reason**: Meta requires an endpoint to send deauthorization requests
-- **What was missing**: `/api/instagram/deauthorize` endpoint
-- **Solution implemented**: Added POST endpoint to handle Meta deauthorization requests
-- **Configuration for Meta Dashboard**: `https://www.3d-hiroba.jp/api/instagram/deauthorize`
+- `fetchInstagramEmbedHtml(permalink)` — Meta oEmbed Read,
+  `fields=html&omitscript=true&hidecaption=true`. Returns the `html`
+  string only.
+- `fetchOgImageFromPublicPage(permalink)` — fetches the public post page
+  with a browser User-Agent and extracts the `og:image` meta tag.
+- `downloadAndStoreImage(imageUrl, shortcode)` — saves the image to
+  Vercel Blob at `picks/<shortcode>.<ext>` with `allowOverwrite: true`.
 
-### 2. **Incomplete Contact Form**
-- **Reason**: Contact form must actually deliver messages (not just log)
-- **Current**: Console logging only (no email sent)
-- **Status**: ⏳ **Needs improvement** - consider adding SendGrid/Resend integration
-- **Impact**: Low - Meta may accept as long as contact info is available
+### `lib/curation.ts`
 
-### 3. **Privacy Policy Missing Required Sections**
-- **Status**: ✅ **Fixed** - Comprehensive bilingual policy includes:
-  - Data collection methods
-  - Storage & retention
-  - User deletion rights
-  - Third-party integrations
+- `PickEntry.ogImageRefreshedAt` — ISO timestamp used by the Cron job.
+- `canonicalInstagramPermalink(rawUrl)` — normalizes any Instagram URL
+  (including `/{username}/p/{shortcode}/`) to
+  `https://www.instagram.com/p/<shortcode>/`.
 
-### 4. **Data Deletion Process Not Clear**
-- **Status**: ✅ **Fixed** - `/data-deletion` page provides:
-  - Clear instructions for users
-  - Multiple contact methods (form + email)
-  - 10-day response commitment
+### `app/api/admin/picks/route.ts`
 
----
+- **POST** normalizes the input URL, calls `fetchInstagramEmbedHtml` to
+  populate `embedHtml`, calls `fetchOgImageFromPublicPage` +
+  `downloadAndStoreImage` to populate `mediaUrl`, and stamps
+  `ogImageRefreshedAt`.
+- **DELETE** removes the curation entry and immediately deletes the
+  cached Blob (both `mediaUrl` and `thumbnailUrl`) via
+  `lib/blob-utils.safeDelBlob`.
 
-## 📋 Meta Dashboard Checklist
+### `app/api/cron/refresh-thumbnails/route.ts` (new)
 
-Before resubmission, verify these settings:
+- Path: `/api/cron/refresh-thumbnails`
+- Schedule: `0 3 * * 0` (Sunday 03:00 UTC) — see `vercel.json`.
+- Auth: `Authorization: Bearer ${CRON_SECRET}`.
+- For each pick older than 7 days: refetch og:image, overwrite the Blob
+  in place, update `ogImageRefreshedAt`. Concurrency capped at 5.
+  Re-checks pick existence inside the update transaction so concurrent
+  admin deletions never resurrect a removed pick.
 
-```
-✅ Settings > Basic
-   - Privacy Policy URL: https://www.3d-hiroba.jp/privacy
-   - App Mode: Development (switch to Live after approval)
-   - Category: Photography / Art / Culture
+### `components/ImageLightbox.tsx`
 
-✅ Products > Instagram Graph API
-   - Status: In Development or Live
-   - Version: v18.0 or latest
-   
-✅ App Roles
-   - ADMIN or DEVELOPER role assigned
-   - Test user created (if needed)
+- When `post.embedHtml` is present, render it via
+  `dangerouslySetInnerHTML` and load `embed.js` from `www.instagram.com`
+  (cached as a singleton; re-processed on each mount).
+- Falls back to the existing `<img>` / `<video>` render for legacy data.
 
-⚠️ Deauthorization Settings (NEW)
-   - Callback URL: https://www.3d-hiroba.jp/api/instagram/deauthorize
-   - Method: POST
-   - Status: Ready for approval
+### `lib/blob-utils.ts` (new)
 
-✅ Data Use Statement
-   - Filled in Meta dashboard
-   - Matches implementation
-   - Links to `/privacy` page
-```
+- `isBlobUrl`, `safeDelBlob` — extracted from
+  `app/api/admin/sheets/route.ts` and shared with picks DELETE + Cron.
 
 ---
 
-## 🚀 Resubmission Checklist
+## Legal & contact endpoints
 
-### Before Submitting to Meta
+| Component | Path |
+|---|---|
+| Privacy Policy | `/privacy` (JP/EN) |
+| Data Deletion | `/data-deletion` |
+| Contact | `/contact` |
+| Deauthorization Callback | `POST /api/instagram/deauthorize` |
 
-- [ ] Verify all URLs resolve correctly (run curl tests)
-- [ ] Test Privacy Policy in both JP/EN
-- [ ] Test Contact Form submission
-- [ ] Test Data Deletion page accessibility
-- [ ] Verify Deauthorize endpoint responds with 200 OK
-- [ ] Check that no API credentials appear in responses
-- [ ] Verify Privacy Policy and Contact links in footer
-
-### When Submitting Form
-
-**Use Case Description**:
-```
-3D Hiroba is a community gallery showcasing 3D pen creations. 
-Site administrators use Instagram oEmbed API to retrieve public post 
-metadata (image, caption, author) and display featured creations in 
-a unified gallery format.
-
-The thumbnail image is cached in Vercel Blob storage for persistent 
-availability. No personal data is collected. All data usage complies 
-with Instagram Platform Policy and Meta Data Use Restrictions.
-```
-
-**Data Use Statement**:
-- See `docs/META_DATA_USE_STATEMENT.txt`
-
-**Test Account Info**:
-- See `docs/TEST_CREDENTIALS.md`
-
-**Privacy Policy URL**:
-- https://www.3d-hiroba.jp/privacy
-
-**Data Deletion URL**:
-- https://www.3d-hiroba.jp/data-deletion
-
-**Deauthorization Callback URL**:
-- https://www.3d-hiroba.jp/api/instagram/deauthorize
+All four return 200 in production.
 
 ---
 
-## 📞 Contact Information
+## Environment variables
 
-For Meta's records:
-- **Support Email**: help@scrib3dpen.jp
-- **Website**: https://www.3d-hiroba.jp
-- **Privacy Policy**: https://www.3d-hiroba.jp/privacy
-- **Contact Form**: https://www.3d-hiroba.jp/contact
-
----
-
-## 🔧 Technical Implementation Details
-
-### Deauthorization Flow
-
-1. **User deauthorizes app** in Instagram settings
-2. **Meta POST request** to `/api/instagram/deauthorize`
-3. **Endpoint receives** user_id, timestamp, signature
-4. **App logs** deauthorization event (for audit trail)
-5. **App responds** 200 OK to Meta
-6. **Admin can manually** delete user's posts if needed
-
-### Security Measures
-
-- ✅ Environment variables for credentials (not hardcoded)
-- ✅ HTTPS only (enforced by Vercel)
-- ✅ No sensitive data in error messages
-- ✅ CORS properly configured
-- ✅ POST /deauthorize accepts JSON body
-
-### Error Handling
-
-```typescript
-// og-image.ts handles:
-- ✅ Missing FACEBOOK_APP_ID/SECRET
-- ✅ Instagram URL fetch failures
-- ✅ OG image not found in HTML
-- ✅ Image download failures
-- ✅ Blob storage failures
-- ✅ Fallback to original URL
-
-// deauthorize endpoint handles:
-- ✅ Invalid request body
-- ✅ Missing parameters
-- ✅ Server errors (500)
-```
+| Name | Where | Notes |
+|---|---|---|
+| `FACEBOOK_APP_ID` | Vercel | Meta App ID |
+| `FACEBOOK_APP_SECRET` | Vercel | Meta App Secret |
+| `BLOB_READ_WRITE_TOKEN` | Vercel | Vercel Blob token |
+| `CRON_SECRET` | Vercel | Random string sent by Vercel Cron in `Authorization: Bearer` |
+| `ADMIN_PASSWORD` | Vercel | Admin panel password |
 
 ---
 
-## 📝 Remaining Tasks (Optional Improvements)
+## Verification (local)
 
-### High Priority
-- [ ] **Email Integration**: Add SendGrid/Resend to `/api/contact` to actually send emails
-
-### Medium Priority  
-- [ ] **Request Signature Verification**: Add HMAC validation to `/api/instagram/deauthorize`
-- [ ] **Rate Limiting**: Add rate limiting to API endpoints
-- [ ] **Monitoring**: Set up alerts for deauthorization requests
-
-### Low Priority
-- [ ] Add Terms of Service page
-- [ ] Add Cookie policy page
-- [ ] Implement automated data deletion (currently manual via admin)
-
----
-
-## 📚 Related Documentation
-
-- `META_APP_REVIEW_CHECKLIST.md` - Dashboard configuration guide
-- `META_DATA_USE_STATEMENT.txt` - Data usage statement template
-- `DEMO_VIDEO_SCRIPT.md` - Demo video script for submission
-- `TEST_CREDENTIALS.md` - Test account information
+1. POST `/api/admin/picks` with `method: "instagram-url"` and a real IG
+   URL → `curation.json` shows the new pick with `embedHtml`, `mediaUrl`
+   (Blob), and `ogImageRefreshedAt`.
+2. Open `/` → click a card → detail modal shows the official IG embed,
+   caption hidden, `embed.js` loaded from `www.instagram.com`.
+3. DELETE `/api/admin/picks?id=<id>` → curation entry gone AND the file
+   at `picks/<shortcode>.jpg` is removed from Vercel Blob.
+4. `curl -H "Authorization: Bearer $CRON_SECRET" \
+     http://localhost:3000/api/cron/refresh-thumbnails` →
+   `ogImageRefreshedAt` is updated; the same call without the header
+   returns 401.
 
 ---
 
-## Timeline
+## Related documents
 
-| Date | Event | Status |
-|------|-------|--------|
-| 2026-04-27 | Initial implementation | ✅ Complete |
-| 2026-04-27 | Privacy + Contact pages | ✅ Complete |
-| 2026-05-01 | Data Deletion page | ✅ Complete |
-| 2026-05-07 | Deauthorize endpoint | ✅ Complete |
-| TBD | **Resubmit to Meta** | ⏳ Pending |
-| TBD | **Meta review (3-7 days)** | ⏳ Pending |
-| TBD | **Approval & Live mode** | ⏳ Pending |
+- `META_APP_REVIEW_CHECKLIST.md` — submission form templates.
+- `META_DATA_USE_STATEMENT.txt` — Data Use Statement (verbatim).
+- `DEMO_VIDEO_SCRIPT.md` — demo recording script.
+- `TEST_CREDENTIALS.md` — test account credentials for Meta reviewer.
 
 ---
 
-**Last Updated**: 2026-05-07  
-**Status**: Ready for Meta resubmission  
-**Next Step**: Configure Meta Dashboard settings and submit for review
+**Last Updated**: 2026-05-25
