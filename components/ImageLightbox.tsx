@@ -1,7 +1,41 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { GalleryPost } from "@/lib/types";
+
+declare global {
+  interface Window {
+    instgrm?: {
+      Embeds: {
+        process: () => void;
+      };
+    };
+  }
+}
+
+const EMBED_SCRIPT_SRC = "https://www.instagram.com/embed.js";
+
+function ensureInstagramEmbed() {
+  if (typeof window === "undefined") return;
+  if (window.instgrm) {
+    window.instgrm.Embeds.process();
+    return;
+  }
+  const existing = document.querySelector<HTMLScriptElement>(
+    `script[src="${EMBED_SCRIPT_SRC}"]`,
+  );
+  if (existing) {
+    existing.addEventListener("load", () => window.instgrm?.Embeds.process(), {
+      once: true,
+    });
+    return;
+  }
+  const s = document.createElement("script");
+  s.src = EMBED_SCRIPT_SRC;
+  s.async = true;
+  s.onload = () => window.instgrm?.Embeds.process();
+  document.body.appendChild(s);
+}
 
 export function ImageLightbox({
   post,
@@ -10,6 +44,8 @@ export function ImageLightbox({
   post: GalleryPost;
   onClose: () => void;
 }) {
+  const embedRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -18,7 +54,12 @@ export function ImageLightbox({
     return () => document.removeEventListener("keydown", handleEscape);
   }, [onClose]);
 
+  useEffect(() => {
+    if (post.embedHtml) ensureInstagramEmbed();
+  }, [post.embedHtml]);
+
   const isVideo = post.mediaType === "video" && post.videoUrl;
+  const hasEmbed = Boolean(post.embedHtml);
 
   return (
     <div
@@ -29,7 +70,13 @@ export function ImageLightbox({
         className="relative max-w-4xl w-full h-full max-h-[90vh] flex items-center justify-center"
         onClick={(e) => e.stopPropagation()}
       >
-        {isVideo ? (
+        {hasEmbed ? (
+          <div
+            ref={embedRef}
+            className="w-full max-w-md max-h-full overflow-y-auto bg-white rounded-lg"
+            dangerouslySetInnerHTML={{ __html: post.embedHtml ?? "" }}
+          />
+        ) : isVideo ? (
           <video
             src={post.videoUrl}
             poster={post.imageUrl}
@@ -67,7 +114,7 @@ export function ImageLightbox({
           </svg>
         </button>
 
-        {post.title && (
+        {!hasEmbed && post.title && (
           <div className="absolute bottom-4 left-4 right-4 max-w-sm">
             <p className="text-sm font-semibold text-white truncate">
               {post.title}
@@ -75,7 +122,7 @@ export function ImageLightbox({
           </div>
         )}
 
-        {post.permalink && (
+        {!hasEmbed && post.permalink && (
           <a
             href={post.permalink}
             target="_blank"
