@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import {
+  canonicalInstagramPermalink,
   createId,
   extractInstagramShortcode,
   normalizeHashtag,
@@ -12,9 +13,11 @@ import {
 } from "@/lib/curation";
 import { requireAdmin } from "@/lib/admin-auth";
 import {
-  fetchInstagramOgImage,
   downloadAndStoreImage,
+  fetchInstagramEmbedHtml,
+  fetchOgImageFromPublicPage,
 } from "@/lib/og-image";
+import { safeDelBlob } from "@/lib/blob-utils";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -60,11 +63,12 @@ export async function POST(req: Request) {
     ? "video"
     : "image";
 
-  const embedHtml = body.embedHtml ? String(body.embedHtml).trim() : "";
+  let embedHtml = body.embedHtml ? String(body.embedHtml).trim() : "";
   const mediaUrl = String(body.mediaUrl ?? "").trim();
 
   let permalink = typeof body.permalink === "string" ? body.permalink.trim() : "";
   let shortcode: string | null = null;
+  let canonical: string | null = null;
   if (method === "instagram-url") {
     if (!permalink) {
       return NextResponse.json(
@@ -73,12 +77,16 @@ export async function POST(req: Request) {
       );
     }
     shortcode = extractInstagramShortcode(permalink);
-    if (!shortcode) {
+    canonical = canonicalInstagramPermalink(permalink);
+    if (!shortcode || !canonical) {
       return NextResponse.json(
         { error: "invalid_instagram_url" },
         { status: 400 },
       );
     }
+    // Persist the canonical form so downstream Cron and embed calls don't
+    // re-derive it from user input.
+    permalink = canonical;
   } else if (!mediaUrl) {
     return NextResponse.json(
       { error: "media_url_required" },
@@ -86,11 +94,23 @@ export async function POST(req: Request) {
     );
   }
 
+  let ogImageRefreshedAt: string | undefined;
+
+  if (!embedHtml && canonical) {
+    const html = await fetchInstagramEmbedHtml(canonical);
+    if (html) {
+      embedHtml = html;
+      console.log(`[picks] embed_html_fetched shortcode=${shortcode}`);
+    } else {
+      console.warn(`[picks] embed_html_unavailable shortcode=${shortcode}`);
+    }
+  }
+
   let resolvedMediaUrl: string | undefined = mediaUrl || undefined;
-  if (!mediaUrl && shortcode) {
+  if (!mediaUrl && shortcode && canonical) {
     try {
-      console.log(`[picks] fetching OG image for permalink=${permalink}`);
-      const ogUrl = await fetchInstagramOgImage(permalink);
+      console.log(`[picks] fetching og:image from public page canonical=${canonical}`);
+      const ogUrl = await fetchOgImageFromPublicPage(canonical);
       if (!ogUrl) {
         console.error(`[picks] og_not_found for shortcode=${shortcode}`);
         return NextResponse.json(
@@ -98,8 +118,8 @@ export async function POST(req: Request) {
           { status: 502 },
         );
       }
-      console.log(`[picks] og_image_found url=${ogUrl} shortcode=${shortcode}`);
       resolvedMediaUrl = await downloadAndStoreImage(ogUrl, shortcode);
+      ogImageRefreshedAt = new Date().toISOString();
       console.log(`[picks] image_stored blob_url=${resolvedMediaUrl}`);
     } catch (err) {
       console.error("[picks] og_fetch_failed:", err);
@@ -132,6 +152,7 @@ export async function POST(req: Request) {
       ? String(body.pentaComment).slice(0, 400)
       : undefined,
     embedHtml: embedHtml || undefined,
+    ogImageRefreshedAt,
     addedAt: new Date().toISOString(),
   };
 
@@ -209,10 +230,24 @@ export async function DELETE(req: Request) {
   if (!id) {
     return NextResponse.json({ error: "id_required" }, { status: 400 });
   }
-  const updated = await updateCuration((data) => ({
-    ...data,
-    picks: data.picks.filter((p) => p.id !== id),
+
+  const data = await readCuration();
+  const target = data.picks.find((p) => p.id === id);
+
+  const updated = await updateCuration((d) => ({
+    ...d,
+    picks: d.picks.filter((p) => p.id !== id),
   }));
+
+  if (target) {
+    // Per Meta Platform Terms: cached og:image is removed immediately when
+    // the administrator removes the post.
+    await Promise.all([
+      safeDelBlob(target.mediaUrl),
+      safeDelBlob(target.thumbnailUrl),
+    ]);
+  }
+
   revalidatePath("/");
   return NextResponse.json({ picks: updated.picks });
 }

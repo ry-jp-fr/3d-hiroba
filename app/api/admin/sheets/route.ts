@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { del } from "@vercel/blob";
 import {
   createId,
   readCuration,
@@ -10,6 +9,7 @@ import {
   type SheetProvider,
 } from "@/lib/curation";
 import { requireAdmin } from "@/lib/admin-auth";
+import { safeDelBlob } from "@/lib/blob-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -31,23 +31,6 @@ function parseProvider(value: unknown): SheetProvider | null {
   return PROVIDERS.includes(value as SheetProvider)
     ? (value as SheetProvider)
     : null;
-}
-
-function isBlobUrl(url: string): boolean {
-  try {
-    return new URL(url).hostname.endsWith(".public.blob.vercel-storage.com");
-  } catch {
-    return false;
-  }
-}
-
-async function safeDelBlob(url: string | undefined): Promise<void> {
-  if (!url || !isBlobUrl(url)) return;
-  try {
-    await del(url);
-  } catch (err) {
-    console.warn("[sheets] blob delete failed:", err);
-  }
 }
 
 type ParsedSheet = Omit<SheetEntry, "id" | "addedAt">;
