@@ -175,11 +175,9 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
       const j = await res.json().catch(() => ({}));
       const errKey = j.error ?? res.status;
       const friendly =
-        errKey === "og_not_found"
-          ? "Instagram からサムネ画像を取得できませんでした。投稿が公開されているか確認するか、サムネ画像を手動でアップロードしてください。"
-          : errKey === "og_fetch_failed"
-            ? "Instagram への接続に失敗しました。FACEBOOK_APP_ID / APP_SECRET の設定を確認してください。"
-            : `登録に失敗しました (${errKey})`;
+        errKey === "embed_unavailable_thumb_required"
+          ? "Instagram の埋め込みコード取得に失敗しました。Instagram の投稿で「シェア → 埋め込みコードをコピー」して貼り付けるか、サムネ画像を手動でアップロードしてください。"
+          : `登録に失敗しました (${errKey})`;
       setError(friendly);
       return;
     }

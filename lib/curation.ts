@@ -28,7 +28,6 @@ export type PickEntry = {
   postedAt?: string;
   pentaComment?: string;
   embedHtml?: string;
-  ogImageRefreshedAt?: string;
   addedAt: string;
 };
 

@@ -12,11 +12,7 @@ import {
   type PickMethod,
 } from "@/lib/curation";
 import { requireAdmin } from "@/lib/admin-auth";
-import {
-  downloadAndStoreImage,
-  fetchInstagramEmbedHtml,
-  fetchOgImageFromPublicPage,
-} from "@/lib/og-image";
+import { fetchInstagramEmbedHtml } from "@/lib/og-image";
 import { safeDelBlob } from "@/lib/blob-utils";
 
 export const dynamic = "force-dynamic";
@@ -94,8 +90,6 @@ export async function POST(req: Request) {
     );
   }
 
-  let ogImageRefreshedAt: string | undefined;
-
   if (!embedHtml && canonical) {
     const html = await fetchInstagramEmbedHtml(canonical);
     if (html) {
@@ -106,31 +100,13 @@ export async function POST(req: Request) {
     }
   }
 
-  let resolvedMediaUrl: string | undefined = mediaUrl || undefined;
-  if (!mediaUrl && shortcode && canonical) {
-    try {
-      console.log(`[picks] fetching og:image from public page canonical=${canonical}`);
-      const ogUrl = await fetchOgImageFromPublicPage(canonical);
-      if (!ogUrl) {
-        console.error(`[picks] og_not_found for shortcode=${shortcode}`);
-        return NextResponse.json(
-          { error: "og_not_found", shortcode },
-          { status: 502 },
-        );
-      }
-      resolvedMediaUrl = await downloadAndStoreImage(ogUrl, shortcode);
-      ogImageRefreshedAt = new Date().toISOString();
-      console.log(`[picks] image_stored blob_url=${resolvedMediaUrl}`);
-    } catch (err) {
-      console.error("[picks] og_fetch_failed:", err);
-      return NextResponse.json(
-        {
-          error: "og_fetch_failed",
-          message: err instanceof Error ? err.message : "unknown",
-        },
-        { status: 502 },
-      );
-    }
+  const resolvedMediaUrl: string | undefined = mediaUrl || undefined;
+
+  if (method === "instagram-url" && !embedHtml && !resolvedMediaUrl) {
+    return NextResponse.json(
+      { error: "embed_unavailable_thumb_required", shortcode },
+      { status: 502 },
+    );
   }
 
   const pick: PickEntry = {
@@ -152,7 +128,6 @@ export async function POST(req: Request) {
       ? String(body.pentaComment).slice(0, 400)
       : undefined,
     embedHtml: embedHtml || undefined,
-    ogImageRefreshedAt,
     addedAt: new Date().toISOString(),
   };
 

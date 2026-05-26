@@ -1,5 +1,0 @@
-{
-  "crons": [
-    { "path": "/api/cron/refresh-thumbnails", "schedule": "0 3 * * 0" }
-  ]
-}
