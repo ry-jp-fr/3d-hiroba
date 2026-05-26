@@ -131,7 +131,7 @@ function extractShortcode(permalink: string): string | null {
 }
 
 function extractEmbedImage(html: string): string | null {
-  const jsonKeys = ["display_url", "image_url", "thumbnail_src", "src"];
+  const jsonKeys = ["display_url", "image_url", "thumbnail_src"];
   for (const key of jsonKeys) {
     const re = new RegExp(
       `"${key}":"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"`,
@@ -139,22 +139,25 @@ function extractEmbedImage(html: string): string | null {
     const match = html.match(re);
     if (match?.[1]) {
       const decoded = decodeJsonString(match[1]);
-      if (looksLikeInstagramImage(decoded)) return decoded;
+      if (looksLikePostImage(decoded)) return decoded;
     }
   }
 
   const embeddedImg = html.match(
     /<img[^>]+class=["']EmbeddedMediaImage["'][^>]+src=["']([^"']+)["']/i,
   );
-  if (embeddedImg?.[1]) return decodeHtmlEntities(embeddedImg[1]);
+  if (embeddedImg?.[1]) {
+    const decoded = decodeHtmlEntities(embeddedImg[1]);
+    if (looksLikePostImage(decoded)) return decoded;
+  }
 
   const ogOnEmbed = extractOgImage(html);
-  if (ogOnEmbed) return ogOnEmbed;
+  if (ogOnEmbed && looksLikePostImage(ogOnEmbed)) return ogOnEmbed;
 
-  // Last resort: any Instagram CDN image URL present in the page (handles
-  // both raw HTML and JSON-encoded forms with escaped slashes).
+  // Last resort: any scontent.* image URL. static.cdninstagram.com is
+  // excluded because that host serves CSS/JS/icons, not user posts.
   const cdnImage = html.match(
-    /https?:\\?\/\\?\/[a-z0-9.-]*cdninstagram\.com\\?\/[^"'<>\s\\]+?\.(?:jpe?g|png|webp)(?:\\?\?[^"'<>\s\\]*)?/i,
+    /https?:\\?\/\\?\/[a-z0-9-]*scontent[a-z0-9.-]*\.cdninstagram\.com\\?\/[^"'<>\s\\]+?\.(?:jpe?g|png|webp)(?:\\?\?[^"'<>\s\\]*)?/i,
   );
   if (cdnImage?.[0]) {
     return decodeJsonString(cdnImage[0]);
@@ -163,8 +166,12 @@ function extractEmbedImage(html: string): string | null {
   return null;
 }
 
-function looksLikeInstagramImage(url: string): boolean {
-  return /^https?:\/\/[a-z0-9.-]*cdninstagram\.com\//i.test(url);
+function looksLikePostImage(url: string): boolean {
+  return (
+    /^https?:\/\/[a-z0-9-]*scontent[a-z0-9.-]*\.cdninstagram\.com\//i.test(
+      url,
+    ) && /\.(?:jpe?g|png|webp|gif)(?:\?|$)/i.test(url)
+  );
 }
 
 function decodeJsonString(s: string): string {
