@@ -1,6 +1,43 @@
 "use client";
 
+import { useEffect } from "react";
 import type { GalleryPost } from "@/lib/types";
+
+declare global {
+  interface Window {
+    instgrm?: {
+      Embeds: {
+        process: () => void;
+      };
+    };
+  }
+}
+
+const EMBED_SCRIPT_SRC = "https://www.instagram.com/embed.js";
+
+function ensureInstagramEmbed() {
+  if (typeof window === "undefined") return;
+  if (window.instgrm) {
+    window.instgrm.Embeds.process();
+    return;
+  }
+  const existing = document.querySelector<HTMLScriptElement>(
+    `script[src="${EMBED_SCRIPT_SRC}"]`,
+  );
+  if (existing) {
+    existing.addEventListener(
+      "load",
+      () => window.instgrm?.Embeds.process(),
+      { once: true },
+    );
+    return;
+  }
+  const s = document.createElement("script");
+  s.src = EMBED_SCRIPT_SRC;
+  s.async = true;
+  s.onload = () => window.instgrm?.Embeds.process();
+  document.body.appendChild(s);
+}
 
 function formatDate(iso?: string) {
   if (!iso) return "";
@@ -31,6 +68,35 @@ const SOURCE_META: Record<
   },
 };
 
+function InstagramEmbedCard({ post }: { post: GalleryPost }) {
+  useEffect(() => {
+    ensureInstagramEmbed();
+  }, [post.embedHtml]);
+
+  return (
+    <article className="bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm flex flex-col">
+      <div
+        className="instagram-embed-wrap [&_.instagram-media]:!m-0 [&_.instagram-media]:!min-w-0 [&_.instagram-media]:!w-full"
+        dangerouslySetInnerHTML={{ __html: post.embedHtml ?? "" }}
+      />
+      {post.pentaComment && (
+        <div className="m-2 flex items-center gap-2 bg-brand-light/70 rounded-2xl px-3 py-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/penta.png"
+            alt=""
+            aria-hidden
+            className="w-[42px] h-[42px] rounded-full object-contain bg-white flex-shrink-0 shadow-sm"
+          />
+          <p className="text-[11px] sm:text-xs text-ink leading-relaxed">
+            {post.pentaComment}
+          </p>
+        </div>
+      )}
+    </article>
+  );
+}
+
 export function PostCard({
   post,
   onImageClick,
@@ -38,6 +104,10 @@ export function PostCard({
   post: GalleryPost;
   onImageClick?: (post: GalleryPost) => void;
 }) {
+  if (post.embedHtml) {
+    return <InstagramEmbedCard post={post} />;
+  }
+
   const meta = SOURCE_META[post.source];
   const isVideo = post.mediaType === "video" && post.videoUrl;
 

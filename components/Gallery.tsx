@@ -18,7 +18,7 @@ export function Gallery({ posts }: { posts: GalleryPost[] }) {
 
   return (
     <>
-      <div className="grid gap-1 sm:gap-3 grid-cols-2">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map((post) => (
           <PostCard
             key={post.id}
