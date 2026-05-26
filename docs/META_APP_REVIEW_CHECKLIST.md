@@ -49,12 +49,15 @@ For each featured post, we call the Meta oEmbed Read endpoint to obtain the
 official embed HTML, which is rendered inside a modal dialog exactly as
 Instagram provides it (using hidecaption=true and omitscript=true, with
 embed.js loaded from www.instagram.com). The gallery grid itself does not
-reproduce Instagram content; it shows only a small thumbnail derived from
-the public post page's og:image meta tag. This thumbnail is temporarily
-cached in our CDN-backed object storage to reduce load on Instagram's
-image servers, is automatically refreshed every 7 days by a scheduled job,
-and is immediately deleted when the administrator removes the post. We do
-not store engagement metrics, author profile data, or any non-public
+reproduce Instagram content; it shows only a small thumbnail obtained from
+the publicly accessible post page — first the post page's og:image meta
+tag, falling back to the publicly embeddable view at
+www.instagram.com/p/<shortcode>/embed/captioned/ (the same view that
+embed.js renders inside the iframe). This thumbnail is temporarily cached
+in our CDN-backed object storage to reduce load on Instagram's image
+servers, is automatically refreshed every 7 days by a scheduled job, and
+is immediately deleted when the administrator removes the post. We do not
+store engagement metrics, author profile data, or any non-public
 information. We do not combine Instagram data with other datasets, do not
 use it for advertising, and do not share it with third parties.
 ```

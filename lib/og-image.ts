@@ -48,6 +48,27 @@ export async function fetchInstagramEmbedHtml(
 export async function fetchOgImageFromPublicPage(
   permalink: string,
 ): Promise<string | null> {
+  // Strategy: try og:image meta on the canonical post page first; if that
+  // page is gated by a login wall or returns an empty SPA shell (common
+  // for unauthenticated server-side fetches), fall back to the public
+  // /embed/ view, which is designed by Instagram to be embeddable across
+  // origins and reliably contains the post image.
+  const ogUrl = await tryOgImageOnPostPage(permalink);
+  if (ogUrl) return ogUrl;
+
+  const shortcode = extractShortcode(permalink);
+  if (shortcode) {
+    const embedUrl = await tryImageOnEmbedPage(shortcode);
+    if (embedUrl) return embedUrl;
+  }
+
+  console.error(`[og-image] all_sources_failed permalink=${permalink}`);
+  return null;
+}
+
+async function tryOgImageOnPostPage(
+  permalink: string,
+): Promise<string | null> {
   try {
     const res = await fetch(permalink, {
       headers: { "User-Agent": USER_AGENT },
@@ -60,7 +81,7 @@ export async function fetchOgImageFromPublicPage(
     const html = await res.text();
     const ogUrl = extractOgImage(html);
     if (!ogUrl) {
-      console.error(`[og-image] og_image_not_found permalink=${permalink}`);
+      console.warn(`[og-image] og_image_not_found permalink=${permalink}`);
       return null;
     }
     console.log(`[og-image] og_image_found url=${ogUrl}`);
@@ -69,6 +90,63 @@ export async function fetchOgImageFromPublicPage(
     console.error(`[og-image] public_page_error`, err);
     return null;
   }
+}
+
+async function tryImageOnEmbedPage(
+  shortcode: string,
+): Promise<string | null> {
+  const url = `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      console.error(`[og-image] embed_page_failed status=${res.status}`);
+      return null;
+    }
+    const html = await res.text();
+    const imageUrl = extractEmbedImage(html);
+    if (!imageUrl) {
+      console.error(`[og-image] embed_image_not_found shortcode=${shortcode}`);
+      return null;
+    }
+    console.log(`[og-image] embed_image_found url=${imageUrl}`);
+    return imageUrl;
+  } catch (err) {
+    console.error(`[og-image] embed_page_error`, err);
+    return null;
+  }
+}
+
+function extractShortcode(permalink: string): string | null {
+  const m = permalink.match(
+    /instagram\.com\/(?:[^/?#]+\/)?(?:p|reel|tv)\/([A-Za-z0-9_-]+)/,
+  );
+  return m?.[1] ?? null;
+}
+
+function extractEmbedImage(html: string): string | null {
+  const displayUrl = html.match(/"display_url":"([^"\\]*(?:\\.[^"\\]*)*)"/);
+  if (displayUrl?.[1]) return decodeJsonString(displayUrl[1]);
+
+  const embeddedImg = html.match(
+    /<img[^>]+class=["']EmbeddedMediaImage["'][^>]+src=["']([^"']+)["']/i,
+  );
+  if (embeddedImg?.[1]) return decodeHtmlEntities(embeddedImg[1]);
+
+  const ogOnEmbed = extractOgImage(html);
+  if (ogOnEmbed) return ogOnEmbed;
+
+  return null;
+}
+
+function decodeJsonString(s: string): string {
+  return s
+    .replace(/\\u002F/gi, "/")
+    .replace(/\\\//g, "/")
+    .replace(/\\u0026/gi, "&")
+    .replace(/\\&/g, "&");
 }
 
 function extractOgImage(html: string): string | null {
