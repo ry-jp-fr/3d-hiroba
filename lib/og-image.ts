@@ -108,7 +108,11 @@ async function tryImageOnEmbedPage(
     const html = await res.text();
     const imageUrl = extractEmbedImage(html);
     if (!imageUrl) {
-      console.error(`[og-image] embed_image_not_found shortcode=${shortcode}`);
+      console.error(
+        `[og-image] embed_image_not_found shortcode=${shortcode} ` +
+          `html_size=${html.length} ` +
+          `head=${html.substring(0, 800).replace(/\s+/g, " ")}`,
+      );
       return null;
     }
     console.log(`[og-image] embed_image_found url=${imageUrl}`);
