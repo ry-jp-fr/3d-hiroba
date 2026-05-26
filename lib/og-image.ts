@@ -108,10 +108,24 @@ async function tryImageOnEmbedPage(
     const html = await res.text();
     const imageUrl = extractEmbedImage(html);
     if (!imageUrl) {
+      const counts = {
+        scontent: (html.match(/scontent/gi) || []).length,
+        display_url: (html.match(/display_url/gi) || []).length,
+        thumbnail_src: (html.match(/thumbnail_src/gi) || []).length,
+        image_url: (html.match(/image_url/gi) || []).length,
+        cdninstagram_image: (
+          html.match(/cdninstagram\.com\/[^"'<>\s\\]+?\.(?:jpe?g|png|webp)/gi) ||
+          []
+        ).length,
+      };
+      const scontentSample = html.match(
+        /[a-z0-9-]*scontent[a-z0-9.-]*\.cdninstagram\.com\/[^"'<>\s\\]{0,200}/i,
+      );
       console.error(
         `[og-image] embed_image_not_found shortcode=${shortcode} ` +
           `html_size=${html.length} ` +
-          `head=${html.substring(0, 800).replace(/\s+/g, " ")}`,
+          `counts=${JSON.stringify(counts)} ` +
+          `scontent_sample=${scontentSample?.[0] ?? "<none>"}`,
       );
       return null;
     }
