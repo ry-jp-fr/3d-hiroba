@@ -12,8 +12,7 @@ to the deprecated "oEmbed Read", retired 2025-10-01).
 - [x] Environment variables set in Vercel:
   - `FACEBOOK_APP_ID`
   - `FACEBOOK_APP_SECRET`
-  - `BLOB_READ_WRITE_TOKEN`
-  - `CRON_SECRET`
+  - `BLOB_READ_WRITE_TOKEN` (for admin manual uploads)
 - [x] API version: **v19.0** (graph.facebook.com/v19.0/instagram_oembed)
 
 ### Legal & Contact
@@ -36,30 +35,29 @@ to the deprecated "oEmbed Read", retired 2025-10-01).
 ```
 3D Hiroba is a community gallery where children and parents share 3D pen
 creations. Administrators curate publicly available Instagram posts as
-featured items, and each featured post is displayed using the official
-Instagram embed returned by Meta oEmbed Read.
+featured items, and each featured post is rendered as the official
+Instagram embed returned by Meta oEmbed Read — both as the gallery card
+and as the detail view.
 ```
 
 ### "Describe how your app uses Instagram data" (Use Case Description)
 
 ```
 3D Hiroba is a community gallery for children sharing 3D pen creations.
-Administrators curate publicly available Instagram posts as featured items.
-For each featured post, we call the Meta oEmbed Read endpoint to obtain the
-official embed HTML, which is rendered inside a modal dialog exactly as
-Instagram provides it (using hidecaption=true and omitscript=true, with
-embed.js loaded from www.instagram.com). The gallery grid itself does not
-reproduce Instagram content; it shows only a small thumbnail obtained from
-the publicly accessible post page — first the post page's og:image meta
-tag, falling back to the publicly embeddable view at
-www.instagram.com/p/<shortcode>/embed/captioned/ (the same view that
-embed.js renders inside the iframe). This thumbnail is temporarily cached
-in our CDN-backed object storage to reduce load on Instagram's image
-servers, is automatically refreshed every 7 days by a scheduled job, and
-is immediately deleted when the administrator removes the post. We do not
-store engagement metrics, author profile data, or any non-public
-information. We do not combine Instagram data with other datasets, do not
-use it for advertising, and do not share it with third parties.
+Administrators curate publicly available Instagram posts as featured
+items. For each featured post we call the Meta oEmbed Read endpoint
+exactly once to obtain the official embed HTML (with hidecaption=true
+and omitscript=true), and we render that HTML unchanged as the gallery
+card itself — Instagram's own embed iframe loads in the visitor's
+browser and the post image, profile, and "View on Instagram" link come
+straight from www.instagram.com. We do not download, cache, or
+otherwise persist any image, caption, author profile, or engagement
+data from Instagram. The only Instagram-derived data we store is the
+embed HTML string returned by Meta oEmbed Read, kept alongside the
+canonical permalink so the embed can be re-rendered on subsequent page
+loads; both are deleted immediately when the administrator removes the
+pick. We do not combine Instagram data with other datasets, do not use
+it for advertising, and do not share it with third parties.
 ```
 
 ### "Which fields will you request from oEmbed?"
@@ -79,18 +77,19 @@ thumbnail_width, thumbnail_height, or title.
 
 ```
 - Site administrators (authentication-gated /admin route).
-- End users see the public gallery and the official Instagram embed.
+- End users see the public gallery and the official Instagram embed
+  loaded directly from www.instagram.com.
 - No third-party integrations.
 ```
 
 ### "What is your data retention policy?"
 
 ```
-Curation metadata is kept while the post is featured. The cached og:image
-in our object storage is refreshed every 7 days by a Vercel Cron job and
-deleted immediately when the administrator removes the post (the API
-DELETE handler removes both the curation entry and the cached Blob in the
-same operation).
+Only the embed HTML string and the canonical permalink are kept while
+the post is featured. There is no image cache — Instagram's embed.js
+loads the post image directly from www.instagram.com in the visitor's
+browser, so no Instagram media binaries ever pass through our servers.
+Deleting a pick removes the curation entry immediately.
 ```
 
 ---
@@ -100,10 +99,12 @@ same operation).
 See `DEMO_VIDEO_SCRIPT.md`. The demo must show:
 
 1. Admin pastes an Instagram URL.
-2. Detail modal opens with the **official Instagram embed iframe** (with
-   caption hidden, embed.js loaded from www.instagram.com).
-3. Admin removes the pick → the cached image in object storage is gone
-   in the same flow (show a network/devtools panel or storage view).
+2. The pick appears in the gallery as the **official Instagram embed
+   iframe**, with caption hidden, embed.js loaded from
+   www.instagram.com, and all visual elements unchanged.
+3. Clicking the embed's "View on Instagram" link goes to instagram.com.
+4. Admin removes the pick → the embed disappears from the gallery and
+   nothing remains on our side.
 
 ---
 
@@ -111,24 +112,19 @@ See `DEMO_VIDEO_SCRIPT.md`. The demo must show:
 
 | Avoid | Reason |
 |---|---|
-| Describing the grid as a "unified gallery format" | Reads as 1.6 violation (reproducing Instagram in a custom shell). |
-| Saying images are "stored indefinitely" or "persistent" | Reads as TOS 1.3 violation (persisting Platform Data). |
-| Requesting `thumbnail_url`, `author_name`, `author_url`, `title` | These fields were removed from oEmbed on 2025-11-03. |
+| Describing the grid as a "unified gallery format" | Reads as 1.6 violation (reproducing Instagram in a custom shell). The new design IS the Instagram embed, not a custom shell. |
+| Saying images are "stored", "cached", "persistent", etc. | We genuinely don't store any Instagram media now — say so clearly. |
+| Requesting `thumbnail_url`, `author_name`, `author_url`, `title` | These fields were removed from oEmbed on 2025-11-03. We only request `html`. |
 | Referencing the retired "oEmbed Read" feature | Replaced by "Meta oEmbed Read" on 2025-10-01. |
+| Any CSS that crops/hides parts of the embed iframe | Violates Meta's embed brand guidelines. We only use the official hidecaption=true parameter. |
 
 ---
 
 ## After Approval
 
 1. Switch app to Live Mode (Settings → Basic).
-2. Verify Vercel Cron is enabled in the dashboard (Settings → Cron Jobs).
-3. Verify `CRON_SECRET` is set as a production environment variable.
-4. Trigger one manual cron run via:
-   ```
-   curl -H "Authorization: Bearer $CRON_SECRET" \
-     https://www.3d-hiroba.jp/api/cron/refresh-thumbnails
-   ```
-   and confirm `ogImageRefreshedAt` was updated.
+2. Confirm the URL-mode admin flow works against arbitrary public posts
+   (pre-approval it works only for posts owned by app developers).
 
 ---
 
@@ -136,9 +132,9 @@ See `DEMO_VIDEO_SCRIPT.md`. The demo must show:
 
 - Meta oEmbed Read docs: https://developers.facebook.com/docs/features-reference/oembed-read
 - Meta Platform Terms: https://developers.facebook.com/terms/
-- Vercel Cron: https://vercel.com/docs/cron-jobs
+- Instagram Brand Guidelines: https://about.meta.com/brand/resources/instagram/
 
 ---
 
-**Last Updated**: 2026-05-25
+**Last Updated**: 2026-05-26
 **Status**: Ready for re-submission to "Meta oEmbed Read"

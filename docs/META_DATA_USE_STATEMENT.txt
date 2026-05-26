@@ -10,12 +10,11 @@ Purpose: Display official Instagram embeds for curated community posts.
 OVERVIEW
 --------
 3D Hiroba is a community gallery platform for sharing 3D pen creations.
-Administrators curate publicly available Instagram posts as featured items.
-For each featured post we call the Meta oEmbed Read endpoint to obtain the
-official embed HTML, which is rendered inside a modal dialog exactly as
-Instagram provides it. The gallery grid itself shows only a small thumbnail
-derived from the public post page's og:image meta tag; this thumbnail is
-temporarily cached, refreshed every 7 days, and deleted on removal.
+Administrators curate publicly available Instagram posts as featured
+items. Every featured post is rendered as the official Instagram embed —
+both in the gallery grid card and in the detail view — exactly as
+Instagram provides it. We do not cache thumbnails, do not store any
+images from Instagram, and do not modify the embed's visual elements.
 
 ---
 
@@ -23,22 +22,20 @@ SUBMISSION FORM USE CASE DESCRIPTION (verbatim)
 -----------------------------------------------
 
 3D Hiroba is a community gallery for children sharing 3D pen creations.
-Administrators curate publicly available Instagram posts as featured items.
-For each featured post, we call the Meta oEmbed Read endpoint to obtain the
-official embed HTML, which is rendered inside a modal dialog exactly as
-Instagram provides it (using hidecaption=true and omitscript=true, with
-embed.js loaded from www.instagram.com). The gallery grid itself does not
-reproduce Instagram content; it shows only a small thumbnail obtained from
-the publicly accessible post page — first the post page's og:image meta
-tag, falling back to the publicly embeddable view at
-www.instagram.com/p/<shortcode>/embed/captioned/ (the same view that
-embed.js renders inside the iframe). This thumbnail is temporarily cached
-in our CDN-backed object storage to reduce load on Instagram's image
-servers, is automatically refreshed every 7 days by a scheduled job, and
-is immediately deleted when the administrator removes the post. We do not
-store engagement metrics, author profile data, or any non-public
-information. We do not combine Instagram data with other datasets, do not
-use it for advertising, and do not share it with third parties.
+Administrators curate publicly available Instagram posts as featured
+items. For each featured post we call the Meta oEmbed Read endpoint
+exactly once to obtain the official embed HTML (with hidecaption=true
+and omitscript=true), and we render that HTML unchanged as the gallery
+card itself — Instagram's own embed iframe loads in the visitor's
+browser and the post image, profile, and "View on Instagram" link come
+straight from www.instagram.com. We do not download, cache, or
+otherwise persist any image, caption, author profile, or engagement
+data from Instagram. The only Instagram-derived data we store is the
+embed HTML string returned by Meta oEmbed Read, kept alongside the
+canonical permalink so the embed can be re-rendered on subsequent page
+loads; both are deleted immediately when the administrator removes the
+pick. We do not combine Instagram data with other datasets, do not use
+it for advertising, and do not share it with third parties.
 
 ---
 
@@ -47,27 +44,26 @@ DATA COLLECTED
 
 From the Meta oEmbed Read endpoint
 (graph.facebook.com/v19.0/instagram_oembed):
-- html  - the official Instagram embed HTML used inside our modal.
+- html  - the official Instagram embed HTML used as the gallery card.
 
 Parameters sent on every request:
 - url=<canonical Instagram permalink>
 - access_token=<APP_ID>|<APP_SECRET>
-- omitscript=true     (script loaded once from www.instagram.com)
-- hidecaption=true
+- omitscript=true     (embed.js loaded once from www.instagram.com)
+- hidecaption=true    (caption hidden per administrator preference)
 - fields=html
 
-We do NOT request, parse, or persist any of the following:
+We do NOT request, parse, or persist any of:
 - author_name / author_url
 - thumbnail_url / thumbnail_width / thumbnail_height
 - title
 - engagement counts (likes, comments)
-- private profile or follower data
+- profile data
+- post image binaries
 
-Gallery thumbnail
-- A small image obtained by parsing the og:image meta tag from the public
-  Instagram post page (the same image any web browser or link preview
-  generator receives).
-- Stored temporarily in Vercel Blob at picks/<shortcode>.<ext>.
+The post image, author profile, and "View on Instagram" link are loaded
+by Instagram's own embed.js directly from www.instagram.com in the
+visitor's browser. None of this traffic passes through our servers.
 
 ---
 
@@ -75,10 +71,10 @@ DATA USE & PURPOSE
 ------------------
 
 PRIMARY USE: Render the official Instagram embed for each featured post.
-- The detail modal contains the unmodified embed HTML returned by oEmbed
-  Read, processed by the official embed.js from www.instagram.com.
-- The gallery list shows only a small cached og:image thumbnail with the
-  post title; clicking the card opens the official embed.
+- The gallery grid card IS the official Instagram embed iframe.
+- The detail modal also renders the same official embed (slightly
+  larger viewport).
+- We never reproduce Instagram content in a custom layout.
 
 NOT USED FOR:
 - Targeted advertising.
@@ -94,23 +90,19 @@ DATA STORAGE & SECURITY
 -----------------------
 
 curation.json on Vercel Blob (admin curation metadata)
-- pick id, internal title, administrator-entered comment, the canonical
-  permalink, the cached og:image Blob URL, the embed HTML returned by
-  oEmbed Read, and ogImageRefreshedAt timestamp.
+- pick id, administrator-entered title and pentaComment, the canonical
+  permalink, the embed HTML returned by Meta oEmbed Read, addedAt
+  timestamp.
 - Written only by the admin API; read by the public site.
 
-Vercel Blob (picks/<shortcode>.<ext>)
-- Temporary cache of og:image; overwritten in place every 7 days by a
-  Vercel Cron job, and deleted immediately when the pick is removed.
-
-No other storage location is used. Firestore, third-party CDNs, or
-analytics platforms are not involved.
+No other Instagram-derived data is stored. There is no thumbnail cache,
+no image binary stored on our side, no scheduled refresh job.
 
 Security
 - HTTPS only.
 - Admin actions gated by httpOnly + Secure auth cookie.
-- Server-side validation: shortcode regex extraction, canonical permalink
-  normalization (https://www.instagram.com/p/<shortcode>/).
+- Server-side validation: shortcode regex extraction, canonical
+  permalink normalization (https://www.instagram.com/p/<shortcode>/).
 
 ---
 
@@ -118,22 +110,13 @@ DATA RETENTION & DELETION
 --------------------------
 
 Retention
-- Curation metadata is kept while the post is featured.
-- Cached og:image and oEmbed HTML are refreshed every 7 days; we treat
-  them as a transient cache, not as a persistent copy of Platform Data.
-- Removing a pick from the admin dashboard immediately removes both the
-  curation entry and the cached Blob (mediaUrl and thumbnailUrl).
+- The embed HTML and permalink are kept while the post is featured.
+- Removing a pick from the admin dashboard immediately deletes the
+  curation entry.
 
 User Rights
 - Anyone can request deletion via help@scrib3dpen.jp or /contact.
 - We honor takedown requests within 24 hours of confirmation.
-
-Refresh Job
-- Path: /api/cron/refresh-thumbnails
-- Schedule: Sunday 03:00 UTC (vercel.json cron entry).
-- Authentication: Authorization: Bearer <CRON_SECRET>.
-- Behavior: for each pick older than 7 days, refetch og:image, overwrite
-  the existing Blob, update ogImageRefreshedAt.
 
 ---
 
@@ -141,8 +124,9 @@ THIRD-PARTY SHARING
 --------------------
 
 No third party receives Instagram-derived data from us.
-- Vercel acts as data processor (Blob storage, hosting).
-- Meta receives the post URL and our app token when we call oEmbed Read.
+- Vercel hosts the application (processor role).
+- Meta receives the post URL and our app token when we call
+  oEmbed Read.
 
 ---
 
@@ -150,7 +134,7 @@ COMPLIANCE & POLICIES
 ---------------------
 
 - Meta Platform Terms
-- Meta Developer Policies (3.b - keep platform data current)
+- Meta Developer Policies
 - Instagram Graph API Terms of Service
 - GDPR / CCPA where applicable
 
@@ -165,22 +149,25 @@ API USAGE PATTERN
 
 1. Admin pastes an Instagram URL into the management interface.
 2. Server normalizes it to https://www.instagram.com/p/<shortcode>/.
-3. Server calls Meta oEmbed Read once and stores html.
-4. Server fetches the public page once and extracts og:image, downloads
-   the image, stores it at picks/<shortcode>.<ext> with allowOverwrite.
-5. The pick is shown in the gallery; clicking opens the modal with the
-   official embed.
-6. Weekly cron refreshes og:image only; oEmbed HTML is not re-fetched.
-7. Pick deletion removes the curation entry and the cached Blob.
+3. Server calls Meta oEmbed Read once with hidecaption=true and stores
+   the returned html string.
+4. The pick is shown in the public gallery as the official Instagram
+   embed iframe (rendered via embed.js loaded from www.instagram.com).
+5. Pick deletion removes the curation entry.
+
+Administrators may also paste an Instagram embed code obtained from
+Instagram's own share dialog; in that case we store the pasted HTML
+without calling Meta oEmbed Read for that pick.
 
 ---
 
 CHILDREN & MINORS
 -----------------
 
-3D Hiroba targets families with children aged 5-14. The gallery shows only
-public Instagram content curated by adult administrators. No accounts, no
-sign-in for children, no profiling of minors.
+3D Hiroba targets families with children aged 5-14. The gallery shows
+only public Instagram content curated by adult administrators, rendered
+as Instagram's own official embed. No accounts, no sign-in for
+children, no profiling of minors.
 
 ---
 
@@ -191,5 +178,5 @@ Form:  https://www.3d-hiroba.jp/contact
 
 ---
 
-Document Version: 3.0
-Last Updated: 2026-05-25
+Document Version: 4.0
+Last Updated: 2026-05-26

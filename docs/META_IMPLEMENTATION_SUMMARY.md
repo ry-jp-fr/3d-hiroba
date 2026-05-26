@@ -1,6 +1,6 @@
 # Meta App Review Implementation Summary
 
-**Date**: 2026-05-25
+**Date**: 2026-05-26
 **Status**: Ready for re-submission to **Meta oEmbed Read**
 
 ---
@@ -8,10 +8,12 @@
 ## Overview
 
 3D Hiroba calls the Meta oEmbed Read endpoint to obtain the official
-Instagram embed HTML for each curated post, and renders it inside a modal
-dialog. The gallery grid shows only a small thumbnail derived from the
-public post page's `og:image` meta tag; the thumbnail is cached for 7
-days at a time and deleted on pick removal.
+Instagram embed HTML for each curated post, and renders that embed
+unchanged as the gallery card itself. There is no thumbnail cache, no
+image binary stored on our side, and no scheduled background job
+touching Instagram resources. Instagram's own embed.js loads the post
+image from www.instagram.com in the visitor's browser, so user-content
+traffic never passes through our servers.
 
 - **App ID**: 26224957440539490
 - **API Version**: v19.0 (`graph.facebook.com/v19.0/instagram_oembed`)
@@ -26,9 +28,10 @@ days at a time and deleted on pick removal.
 | Change | Why |
 |---|---|
 | Migrated to **Meta oEmbed Read** feature | Legacy "oEmbed Read" retired 2025-10-01. |
-| Stopped requesting `thumbnail_url`/`author_name`/`author_url`/`title` from oEmbed | These fields were removed from oEmbed responses 2025-11-03. |
-| Detail modal now renders the **official Instagram embed** via `embed.js` | Addresses 1.6 (use case invalid): the embed is the genuine, untouched Instagram render. |
-| Thumbnail is `og:image` from the public post page, cached for 7 days, refreshed by Vercel Cron, deleted on pick removal | Replaces the previous "persistent" Blob copy of oEmbed thumbnail_url; satisfies TOS 1.3 by treating the cache as transient. |
+| Stopped requesting `thumbnail_url`/`author_name`/`author_url`/`title` | These fields were removed from oEmbed responses 2025-11-03. We request only `html`. |
+| **Gallery card now IS the official Instagram embed iframe** | Directly addresses 1.6 (use case invalid) — there is no longer any custom layout reproducing Instagram content. |
+| Removed all server-side image caching | Directly addresses TOS 1.3 (persisting Platform Data). Instagram's embed.js loads the post image client-side from www.instagram.com. |
+| Removed the weekly Vercel Cron refresh job | No cache to refresh. |
 | API version bumped to v19.0 | v18.0 is being deprecated. |
 | Use Case Description rewritten | Removed trigger words "unified gallery format" and "persistent availability". |
 
@@ -41,14 +44,12 @@ days at a time and deleted on pick removal.
 - `fetchInstagramEmbedHtml(permalink)` — Meta oEmbed Read,
   `fields=html&omitscript=true&hidecaption=true`. Returns the `html`
   string only.
-- `fetchOgImageFromPublicPage(permalink)` — fetches the public post page
-  with a browser User-Agent and extracts the `og:image` meta tag.
-- `downloadAndStoreImage(imageUrl, shortcode)` — saves the image to
-  Vercel Blob at `picks/<shortcode>.<ext>` with `allowOverwrite: true`.
+- `downloadAndStoreImage(imageUrl, shortcode)` — used only by the manual
+  thumbnail upload fallback (for picks that don't have an Instagram
+  embed and need a static image).
 
 ### `lib/curation.ts`
 
-- `PickEntry.ogImageRefreshedAt` — ISO timestamp used by the Cron job.
 - `canonicalInstagramPermalink(rawUrl)` — normalizes any Instagram URL
   (including `/{username}/p/{shortcode}/`) to
   `https://www.instagram.com/p/<shortcode>/`.
@@ -56,34 +57,31 @@ days at a time and deleted on pick removal.
 ### `app/api/admin/picks/route.ts`
 
 - **POST** normalizes the input URL, calls `fetchInstagramEmbedHtml` to
-  populate `embedHtml`, calls `fetchOgImageFromPublicPage` +
-  `downloadAndStoreImage` to populate `mediaUrl`, and stamps
-  `ogImageRefreshedAt`.
-- **DELETE** removes the curation entry and immediately deletes the
-  cached Blob (both `mediaUrl` and `thumbnailUrl`) via
-  `lib/blob-utils.safeDelBlob`.
+  populate `embedHtml`. Admin may also paste an embed code directly,
+  which we sanitize and store without calling Meta oEmbed Read.
+- If neither an embedHtml nor a manually uploaded thumbnail is
+  available for an instagram-url pick, POST returns 502
+  `embed_unavailable_thumb_required` with a clear message in the UI.
+- **DELETE** removes the curation entry and deletes any locally
+  uploaded thumbnail Blob.
 
-### `app/api/cron/refresh-thumbnails/route.ts` (new)
+### `components/PostCard.tsx`
 
-- Path: `/api/cron/refresh-thumbnails`
-- Schedule: `0 3 * * 0` (Sunday 03:00 UTC) — see `vercel.json`.
-- Auth: `Authorization: Bearer ${CRON_SECRET}`.
-- For each pick older than 7 days: refetch og:image, overwrite the Blob
-  in place, update `ogImageRefreshedAt`. Concurrency capped at 5.
-  Re-checks pick existence inside the update transaction so concurrent
-  admin deletions never resurrect a removed pick.
+- When `post.embedHtml` is present, the card renders that HTML inside a
+  `<div>` and calls `window.instgrm.Embeds.process()`. `embed.js` is
+  loaded once from `www.instagram.com`.
+- Picks without `embedHtml` (manual uploads, seed data) still render
+  the existing custom card with our own thumbnail.
 
 ### `components/ImageLightbox.tsx`
 
-- When `post.embedHtml` is present, render it via
-  `dangerouslySetInnerHTML` and load `embed.js` from `www.instagram.com`
-  (cached as a singleton; re-processed on each mount).
-- Falls back to the existing `<img>` / `<video>` render for legacy data.
+- Unchanged. Used only by manual-upload cards (embed cards have their
+  own "View on Instagram" affordance and don't open the lightbox).
 
-### `lib/blob-utils.ts` (new)
+### `lib/blob-utils.ts`
 
-- `isBlobUrl`, `safeDelBlob` — extracted from
-  `app/api/admin/sheets/route.ts` and shared with picks DELETE + Cron.
+- `isBlobUrl`, `safeDelBlob` — shared between picks DELETE and the
+  sheets API for cleaning up uploaded Blobs on removal.
 
 ---
 
@@ -106,8 +104,7 @@ All four return 200 in production.
 |---|---|---|
 | `FACEBOOK_APP_ID` | Vercel | Meta App ID |
 | `FACEBOOK_APP_SECRET` | Vercel | Meta App Secret |
-| `BLOB_READ_WRITE_TOKEN` | Vercel | Vercel Blob token |
-| `CRON_SECRET` | Vercel | Random string sent by Vercel Cron in `Authorization: Bearer` |
+| `BLOB_READ_WRITE_TOKEN` | Vercel | Vercel Blob token (manual uploads only) |
 | `ADMIN_PASSWORD` | Vercel | Admin panel password |
 
 ---
@@ -115,16 +112,17 @@ All four return 200 in production.
 ## Verification (local)
 
 1. POST `/api/admin/picks` with `method: "instagram-url"` and a real IG
-   URL → `curation.json` shows the new pick with `embedHtml`, `mediaUrl`
-   (Blob), and `ogImageRefreshedAt`.
-2. Open `/` → click a card → detail modal shows the official IG embed,
-   caption hidden, `embed.js` loaded from `www.instagram.com`.
-3. DELETE `/api/admin/picks?id=<id>` → curation entry gone AND the file
-   at `picks/<shortcode>.jpg` is removed from Vercel Blob.
-4. `curl -H "Authorization: Bearer $CRON_SECRET" \
-     http://localhost:3000/api/cron/refresh-thumbnails` →
-   `ogImageRefreshedAt` is updated; the same call without the header
-   returns 401.
+   URL → `curation.json` shows the new pick with `embedHtml`. No
+   image is downloaded to Blob (`picks/` prefix has no new files).
+2. Open `/` → the new pick appears as the official Instagram embed
+   iframe, caption hidden, `embed.js` loaded from `www.instagram.com`,
+   post image loaded directly from `*.cdninstagram.com` to the
+   visitor's browser.
+3. DELETE `/api/admin/picks?id=<id>` → curation entry gone. No Blob to
+   delete (none was created).
+4. Paste an admin-supplied embed code via "埋め込みコードから登録" →
+   pick saved with the pasted HTML (no oEmbed call); same rendering
+   as above.
 
 ---
 
@@ -137,4 +135,4 @@ All four return 200 in production.
 
 ---
 
-**Last Updated**: 2026-05-25
+**Last Updated**: 2026-05-26
