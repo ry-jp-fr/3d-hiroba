@@ -131,8 +131,17 @@ function extractShortcode(permalink: string): string | null {
 }
 
 function extractEmbedImage(html: string): string | null {
-  const displayUrl = html.match(/"display_url":"([^"\\]*(?:\\.[^"\\]*)*)"/);
-  if (displayUrl?.[1]) return decodeJsonString(displayUrl[1]);
+  const jsonKeys = ["display_url", "image_url", "thumbnail_src", "src"];
+  for (const key of jsonKeys) {
+    const re = new RegExp(
+      `"${key}":"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"`,
+    );
+    const match = html.match(re);
+    if (match?.[1]) {
+      const decoded = decodeJsonString(match[1]);
+      if (looksLikeInstagramImage(decoded)) return decoded;
+    }
+  }
 
   const embeddedImg = html.match(
     /<img[^>]+class=["']EmbeddedMediaImage["'][^>]+src=["']([^"']+)["']/i,
@@ -142,7 +151,20 @@ function extractEmbedImage(html: string): string | null {
   const ogOnEmbed = extractOgImage(html);
   if (ogOnEmbed) return ogOnEmbed;
 
+  // Last resort: any Instagram CDN image URL present in the page (handles
+  // both raw HTML and JSON-encoded forms with escaped slashes).
+  const cdnImage = html.match(
+    /https?:\\?\/\\?\/[a-z0-9.-]*cdninstagram\.com\\?\/[^"'<>\s\\]+?\.(?:jpe?g|png|webp)(?:\\?\?[^"'<>\s\\]*)?/i,
+  );
+  if (cdnImage?.[0]) {
+    return decodeJsonString(cdnImage[0]);
+  }
+
   return null;
+}
+
+function looksLikeInstagramImage(url: string): boolean {
+  return /^https?:\/\/[a-z0-9.-]*cdninstagram\.com\//i.test(url);
 }
 
 function decodeJsonString(s: string): string {
