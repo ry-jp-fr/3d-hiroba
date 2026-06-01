@@ -95,6 +95,7 @@ export type SubmissionEntry = {
   submittedAt: string;
   approvedPickId?: string;
   approvedPickIds?: string[];
+  deletedAt?: string;
 };
 
 export type HomepageConfig = {
