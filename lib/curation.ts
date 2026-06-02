@@ -87,12 +87,15 @@ export type SubmissionEntry = {
   name: string;
   email: string;
   imageUrl?: string;
+  mediaUrls?: string[];
   instagramUrl?: string;
   notes?: string;
   consent: boolean;
   parentalConsent: boolean;
   submittedAt: string;
   approvedPickId?: string;
+  approvedPickIds?: string[];
+  deletedAt?: string;
 };
 
 export type HomepageConfig = {

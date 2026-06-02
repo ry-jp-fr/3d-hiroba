@@ -6,11 +6,14 @@ type SubmissionData = {
   name: string;
   email: string;
   imageUrl?: string;
+  mediaUrls?: string[];
   instagramUrl?: string;
   notes?: string;
   consent: boolean;
   parentalConsent: boolean;
 };
+
+const MAX_MEDIA = 10;
 
 export async function POST(req: Request) {
   try {
@@ -46,8 +49,27 @@ export async function POST(req: Request) {
       );
     }
 
-    // At least one of image or instagram URL must be provided
-    if (!body.imageUrl?.trim() && !body.instagramUrl?.trim()) {
+    // Normalize mediaUrls: prefer the array, fall back to legacy imageUrl
+    const mediaUrls: string[] = Array.isArray(body.mediaUrls)
+      ? body.mediaUrls
+          .map((u) => (typeof u === "string" ? u.trim() : ""))
+          .filter((u): u is string => u.length > 0)
+      : body.imageUrl?.trim()
+        ? [body.imageUrl.trim()]
+        : [];
+
+    if (mediaUrls.length > MAX_MEDIA) {
+      return NextResponse.json(
+        {
+          error: "too_many_media",
+          message: `アップロードできるのは最大 ${MAX_MEDIA} 件までです`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // At least one media or instagram URL must be provided
+    if (mediaUrls.length === 0 && !body.instagramUrl?.trim()) {
       return NextResponse.json(
         {
           error: "media_required",
@@ -77,7 +99,8 @@ export async function POST(req: Request) {
       title: body.title.trim(),
       name: body.name.trim(),
       email: body.email.trim(),
-      imageUrl: body.imageUrl?.trim() || undefined,
+      imageUrl: mediaUrls[0] || undefined,
+      mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
       instagramUrl: body.instagramUrl?.trim() || undefined,
       notes: body.notes?.trim() || undefined,
       consent: body.consent,
