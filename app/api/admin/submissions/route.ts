@@ -142,6 +142,7 @@ function buildPickForMedia(
   sub: SubmissionEntry,
   mediaUrl: string | undefined,
   mediaType: PickMediaType,
+  thumbnailUrl?: string,
 ): PickEntry {
   const useUpload = Boolean(mediaUrl);
   return {
@@ -151,6 +152,10 @@ function buildPickForMedia(
     author: sub.name,
     mediaType: useUpload ? mediaType : "image",
     mediaUrl,
+    thumbnailUrl:
+      mediaType === "video" && thumbnailUrl
+        ? thumbnailUrl.slice(0, 500)
+        : undefined,
     caption: sub.notes,
     tags: [],
     permalink: sub.instagramUrl,
@@ -259,6 +264,15 @@ export async function POST(req: Request) {
         .filter((u) => u.length > 0)
     : null;
 
+  const thumbnailMap: Record<string, string> = {};
+  if (body?.thumbnails && typeof body.thumbnails === "object") {
+    for (const [k, v] of Object.entries(body.thumbnails as Record<string, unknown>)) {
+      if (typeof v === "string" && v.trim()) {
+        thumbnailMap[k] = v.trim();
+      }
+    }
+  }
+
   try {
     // Validate and figure out which media to publish, then resolve each
     // media's true type (image/video) via the Blob Content-Type before the
@@ -306,7 +320,12 @@ export async function POST(req: Request) {
       const picks: PickEntry[] =
         chosen.length > 0
           ? chosen.map((url) =>
-              buildPickForMedia(t, url, typeByUrl.get(url) ?? "image"),
+              buildPickForMedia(
+                t,
+                url,
+                typeByUrl.get(url) ?? "image",
+                thumbnailMap[url],
+              ),
             )
           : [buildPickForMedia(t, undefined, "image")];
 
