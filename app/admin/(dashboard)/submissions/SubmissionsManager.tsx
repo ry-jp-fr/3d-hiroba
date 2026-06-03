@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SubmissionEntry } from "@/lib/curation";
 import {
   getSubmissionMediaUrls,
   inferMediaTypeFromUrl,
 } from "@/lib/submission-media";
+import { captureVideoPosterBlob } from "@/lib/video-thumbnail-client";
+import { uploadImageBlob } from "@/lib/upload-image-blob";
 import type { BlobMediaItem } from "@/app/api/admin/blobs/route";
 
 function isVideo(url: string | undefined): boolean {
@@ -49,6 +51,10 @@ export function SubmissionsManager({
   const [draft, setDraft] = useState<EditDraft>({ title: "", name: "" });
   const [selectedMedia, setSelectedMedia] = useState<Record<string, Set<string>>>({});
   const [showCreate, setShowCreate] = useState(false);
+  const [approving, setApproving] = useState<{
+    submission: SubmissionEntry;
+    mediaUrls: string[];
+  } | null>(null);
 
   const activeItems = items.filter((s) => !s.deletedAt);
   const trashItems = items.filter((s) => s.deletedAt);
@@ -111,7 +117,7 @@ export function SubmissionsManager({
     setEditingId(null);
   }
 
-  async function approve(s: SubmissionEntry) {
+  function openApprove(s: SubmissionEntry) {
     if (s.approvedPickId) return;
     const submissionMedia = getSubmissionMediaUrls(s);
     const selected = Array.from(getSelected(s)).filter((u) =>
@@ -121,34 +127,8 @@ export function SubmissionsManager({
       setError("掲載するメディアを1つ以上選んでください");
       return;
     }
-    const count = selected.length;
-    const promptText =
-      count > 1
-        ? `「${s.title}」を承認し、${count} 件のメディアをギャラリーに掲載しますか？`
-        : `「${s.title}」を承認してギャラリーに掲載しますか？`;
-    if (!confirm(promptText)) return;
-    setBusyId(s.id);
     setError(null);
-    const res = await fetch("/api/admin/submissions", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        action: "approve",
-        id: s.id,
-        mediaUrls: selected,
-      }),
-    });
-    setBusyId(null);
-    if (!res.ok) {
-      const detail = await res
-        .json()
-        .then((j) => j?.message || j?.error)
-        .catch(() => null);
-      setError(`承認に失敗しました (${res.status}${detail ? `: ${detail}` : ""})`);
-      return;
-    }
-    const json = (await res.json()) as { submissions: SubmissionEntry[] };
-    setItems(json.submissions);
+    setApproving({ submission: s, mediaUrls: selected });
   }
 
   async function remove(s: SubmissionEntry) {
@@ -466,7 +446,7 @@ export function SubmissionsManager({
                     <>
                       <button
                         type="button"
-                        onClick={() => approve(s)}
+                        onClick={() => openApprove(s)}
                         disabled={approved || busy}
                         className="text-xs px-3 py-1.5 rounded-full bg-brand text-white font-semibold hover:bg-brand-dark disabled:opacity-40 disabled:cursor-not-allowed"
                       >
@@ -508,6 +488,18 @@ export function SubmissionsManager({
             setItems(submissions);
             setShowCreate(false);
             setTab("active");
+          }}
+        />
+      )}
+
+      {approving && (
+        <ApproveModal
+          submission={approving.submission}
+          mediaUrls={approving.mediaUrls}
+          onClose={() => setApproving(null)}
+          onApproved={(submissions) => {
+            setItems(submissions);
+            setApproving(null);
           }}
         />
       )}
@@ -746,3 +738,373 @@ function CreateFromBlobModal({
 
 const inputCls =
   "mt-0.5 w-full rounded-lg border border-black/10 bg-paper px-2 py-1.5 text-sm focus:outline-none focus:border-brand";
+
+type ThumbChoice =
+  | { kind: "auto"; status: "pending" | "ready" | "failed"; blob?: Blob; previewUrl?: string; error?: string }
+  | { kind: "manual"; file?: File; previewUrl?: string }
+  | { kind: "reuse"; url: string };
+
+function ApproveModal({
+  submission,
+  mediaUrls,
+  onClose,
+  onApproved,
+}: {
+  submission: SubmissionEntry;
+  mediaUrls: string[];
+  onClose: () => void;
+  onApproved: (submissions: SubmissionEntry[]) => void;
+}) {
+  const videoUrls = useMemo(
+    () => mediaUrls.filter((u) => isVideo(u)),
+    [mediaUrls],
+  );
+  const imageUrls = useMemo(
+    () => mediaUrls.filter((u) => !isVideo(u)),
+    [mediaUrls],
+  );
+
+  const [choices, setChoices] = useState<Record<string, ThumbChoice>>(() => {
+    const init: Record<string, ThumbChoice> = {};
+    for (const url of videoUrls) {
+      init[url] = { kind: "auto", status: "pending" };
+    }
+    return init;
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Kick off auto-capture for every video on mount.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      for (const url of videoUrls) {
+        try {
+          const blob = await captureVideoPosterBlob(url);
+          if (cancelled) return;
+          const previewUrl = URL.createObjectURL(blob);
+          setChoices((prev) => {
+            const cur = prev[url];
+            if (!cur || cur.kind !== "auto") return prev;
+            return {
+              ...prev,
+              [url]: { kind: "auto", status: "ready", blob, previewUrl },
+            };
+          });
+        } catch (err) {
+          if (cancelled) return;
+          const message = err instanceof Error ? err.message : "capture_failed";
+          setChoices((prev) => {
+            const cur = prev[url];
+            if (!cur || cur.kind !== "auto") return prev;
+            return {
+              ...prev,
+              [url]: { kind: "auto", status: "failed", error: message },
+            };
+          });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Revoke blob preview URLs on unmount.
+  useEffect(() => {
+    return () => {
+      for (const c of Object.values(choices)) {
+        if ("previewUrl" in c && c.previewUrl) {
+          URL.revokeObjectURL(c.previewUrl);
+        }
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function setChoice(url: string, next: ThumbChoice) {
+    setChoices((prev) => {
+      const old = prev[url];
+      if (old && "previewUrl" in old && old.previewUrl && old.previewUrl !== ("previewUrl" in next ? next.previewUrl : undefined)) {
+        URL.revokeObjectURL(old.previewUrl);
+      }
+      return { ...prev, [url]: next };
+    });
+  }
+
+  function onManualFile(url: string, file: File) {
+    const previewUrl = URL.createObjectURL(file);
+    setChoice(url, { kind: "manual", file, previewUrl });
+  }
+
+  function previewSrc(url: string): string | undefined {
+    const c = choices[url];
+    if (!c) return undefined;
+    if (c.kind === "reuse") return c.url;
+    if (c.kind === "manual") return c.previewUrl;
+    if (c.kind === "auto" && c.status === "ready") return c.previewUrl;
+    return undefined;
+  }
+
+  async function submit() {
+    setBusy(true);
+    setError(null);
+
+    const thumbnails: Record<string, string> = {};
+    try {
+      for (const url of videoUrls) {
+        const c = choices[url];
+        if (!c) continue;
+        if (c.kind === "reuse") {
+          thumbnails[url] = c.url;
+        } else if (c.kind === "manual" && c.file) {
+          thumbnails[url] = await uploadImageBlob(
+            c.file,
+            `poster-${Date.now()}-${c.file.name}`,
+          );
+        } else if (c.kind === "auto" && c.status === "ready" && c.blob) {
+          thumbnails[url] = await uploadImageBlob(
+            c.blob,
+            `poster-${Date.now()}.jpg`,
+          );
+        }
+        // missing/failed thumbnail: just don't set one. The pick will publish
+        // without a poster — admin can fix it later from /admin/uploads.
+      }
+    } catch (err) {
+      setBusy(false);
+      setError(
+        err instanceof Error
+          ? `サムネのアップロードに失敗: ${err.message}`
+          : "サムネのアップロードに失敗しました",
+      );
+      return;
+    }
+
+    const res = await fetch("/api/admin/submissions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        action: "approve",
+        id: submission.id,
+        mediaUrls,
+        thumbnails,
+      }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      const detail = await res
+        .json()
+        .then((j) => j?.message || j?.error)
+        .catch(() => null);
+      setError(`承認に失敗しました (${res.status}${detail ? `: ${detail}` : ""})`);
+      return;
+    }
+    const json = (await res.json()) as { submissions: SubmissionEntry[] };
+    onApproved(json.submissions);
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-xl">承認してギャラリーに掲載</h2>
+            <p className="text-xs text-ink-muted mt-1">
+              「{submission.title}」 · {mediaUrls.length} 件のメディア
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            className="text-ink-muted hover:text-ink text-2xl disabled:opacity-40"
+          >
+            ✕
+          </button>
+        </div>
+
+        {videoUrls.length === 0 ? (
+          <p className="text-sm text-ink-muted">
+            画像のみのため、このまま承認するとギャラリーに掲載されます。
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-ink">
+              動画のサムネイル（ポスター画像）を設定します。
+              一覧で動画タイルに表示されます。
+            </p>
+            {videoUrls.map((url) => {
+              const c = choices[url];
+              const p = previewSrc(url);
+              return (
+                <div
+                  key={url}
+                  className="rounded-2xl border border-black/10 p-4 flex gap-4"
+                >
+                  <div className="w-32 shrink-0 space-y-2">
+                    <video
+                      src={url}
+                      className="w-full aspect-square object-cover bg-black/5 rounded-xl"
+                      muted
+                      playsInline
+                      preload="metadata"
+                    />
+                    <div className="text-[10px] text-ink-muted text-center">
+                      動画
+                    </div>
+                    {p ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p}
+                        alt="サムネプレビュー"
+                        className="w-full aspect-square object-cover bg-paper rounded-xl border border-brand/40"
+                      />
+                    ) : (
+                      <div className="w-full aspect-square rounded-xl bg-paper border border-dashed border-black/10 flex items-center justify-center text-[10px] text-ink-muted text-center px-1">
+                        {c?.kind === "auto" && c.status === "pending"
+                          ? "自動取得中..."
+                          : "サムネなし"}
+                      </div>
+                    )}
+                    <div className="text-[10px] text-ink-muted text-center">
+                      サムネ
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-w-0 space-y-2 text-sm">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name={`thumb-${url}`}
+                        checked={c?.kind === "auto"}
+                        onChange={() => {
+                          // Re-run auto-capture if user toggles back.
+                          setChoice(url, { kind: "auto", status: "pending" });
+                          captureVideoPosterBlob(url)
+                            .then((blob) => {
+                              const previewUrl = URL.createObjectURL(blob);
+                              setChoice(url, {
+                                kind: "auto",
+                                status: "ready",
+                                blob,
+                                previewUrl,
+                              });
+                            })
+                            .catch((err) => {
+                              setChoice(url, {
+                                kind: "auto",
+                                status: "failed",
+                                error:
+                                  err instanceof Error ? err.message : "failed",
+                              });
+                            });
+                        }}
+                      />
+                      <span>自動生成（動画の先頭フレーム）</span>
+                      {c?.kind === "auto" && c.status === "failed" && (
+                        <span className="text-[11px] text-red-600">
+                          失敗 ({c.error}) — 手動を選んでください
+                        </span>
+                      )}
+                    </label>
+
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name={`thumb-${url}`}
+                        className="mt-1"
+                        checked={c?.kind === "manual"}
+                        onChange={() => setChoice(url, { kind: "manual" })}
+                      />
+                      <div className="flex-1">
+                        <span>手動アップロード</span>
+                        {c?.kind === "manual" && (
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) onManualFile(url, f);
+                            }}
+                            className="mt-1 block w-full text-xs"
+                          />
+                        )}
+                      </div>
+                    </label>
+
+                    {imageUrls.length > 0 && (
+                      <div className="space-y-1">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`thumb-${url}`}
+                            checked={c?.kind === "reuse"}
+                            onChange={() =>
+                              setChoice(url, {
+                                kind: "reuse",
+                                url: imageUrls[0],
+                              })
+                            }
+                          />
+                          <span>同応募の画像を流用</span>
+                        </label>
+                        {c?.kind === "reuse" && (
+                          <div className="flex gap-2 flex-wrap pl-6">
+                            {imageUrls.map((iu) => (
+                              <button
+                                key={iu}
+                                type="button"
+                                onClick={() =>
+                                  setChoice(url, { kind: "reuse", url: iu })
+                                }
+                                className={`w-12 h-12 rounded-lg overflow-hidden border-2 ${
+                                  c.url === iu
+                                    ? "border-brand"
+                                    : "border-transparent opacity-60"
+                                }`}
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={iu}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            className="rounded-full border border-black/10 px-6 py-2 text-sm font-semibold hover:bg-black/5 disabled:opacity-50"
+          >
+            キャンセル
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={busy}
+            className="rounded-full bg-brand text-white font-semibold px-6 py-2 text-sm hover:bg-brand-dark disabled:opacity-50"
+          >
+            {busy ? "処理中..." : "承認して掲載"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

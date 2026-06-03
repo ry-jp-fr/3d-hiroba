@@ -189,8 +189,11 @@ export async function PATCH(req: Request) {
         next.pentaComment = String(updates.pentaComment);
       if (updates.postedAt !== undefined)
         next.postedAt = String(updates.postedAt);
-      if (updates.thumbnailUrl !== undefined)
-        next.thumbnailUrl = String(updates.thumbnailUrl);
+      if (updates.thumbnailUrl !== undefined) {
+        const v = updates.thumbnailUrl;
+        next.thumbnailUrl =
+          v === null || v === "" ? undefined : String(v).slice(0, 500);
+      }
       if (updates.embedHtml !== undefined)
         next.embedHtml = String(updates.embedHtml);
       if (updates.tags !== undefined) next.tags = parseTags(updates.tags);
