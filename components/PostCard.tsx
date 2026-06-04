@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import type { GalleryPost } from "@/lib/types";
+import { PentaComment } from "./PentaComment";
 
 declare global {
   interface Window {
@@ -80,17 +81,8 @@ function InstagramEmbedCard({ post }: { post: GalleryPost }) {
         dangerouslySetInnerHTML={{ __html: post.embedHtml ?? "" }}
       />
       {post.pentaComment && (
-        <div className="m-2 flex items-center gap-2 bg-brand-light/70 rounded-2xl px-3 py-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/penta.png"
-            alt=""
-            aria-hidden
-            className="w-[42px] h-[42px] rounded-full object-contain bg-white flex-shrink-0 shadow-sm"
-          />
-          <p className="text-[11px] sm:text-xs text-ink leading-relaxed">
-            {post.pentaComment}
-          </p>
+        <div className="px-2 pb-2">
+          <PentaComment comment={post.pentaComment} />
         </div>
       )}
     </article>
@@ -169,7 +161,7 @@ export function PostCard({
           )}
         </div>
       )}
-      <div className="p-1 sm:p-2 flex-1 flex flex-col gap-1">
+      <div className="p-2 flex-1 flex flex-col gap-2">
         {post.title && (
           <h3 className="font-bold text-sm sm:text-base">{post.title}</h3>
         )}
@@ -213,20 +205,7 @@ export function PostCard({
             </div>
           )}
         </div>
-        {post.pentaComment && (
-          <div className="flex items-center gap-2 bg-brand-light/70 rounded-2xl px-3 py-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/penta.png"
-              alt=""
-              aria-hidden
-              className="w-[42px] h-[42px] rounded-full object-contain bg-white flex-shrink-0 shadow-sm"
-            />
-            <p className="text-[11px] sm:text-xs text-ink leading-relaxed">
-              {post.pentaComment}
-            </p>
-          </div>
-        )}
+        {post.pentaComment && <PentaComment comment={post.pentaComment} />}
       </div>
     </article>
   );
