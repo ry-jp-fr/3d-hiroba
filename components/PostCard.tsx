@@ -126,52 +126,49 @@ export function PostCard({
 
   return (
     <article className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-      {isVideo ? (
-        <div
-          className="block relative aspect-square overflow-hidden bg-paper cursor-pointer"
-          onClick={() => onImageClick?.(post)}
+      <div
+        className="block relative aspect-[4/5] overflow-hidden bg-paper cursor-pointer"
+        onClick={() => onImageClick?.(post)}
+      >
+        {mediaInner}
+        <span
+          className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
         >
-          {mediaInner}
-          <span
-            className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
-          >
-            {meta.label}
+          {meta.label}
+        </span>
+        {post.author && (
+          <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
+            {post.author}
           </span>
-          {post.author && (
-            <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
-              {post.author}
-            </span>
-          )}
-        </div>
-      ) : (
-        <div
-          className="block relative aspect-square overflow-hidden bg-paper cursor-pointer"
-          onClick={() => onImageClick?.(post)}
-        >
-          {mediaInner}
-          <span
-            className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
-          >
-            {meta.label}
-          </span>
-          {post.author && (
-            <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
-              {post.author}
-            </span>
-          )}
-        </div>
-      )}
-      <div className="p-2 flex-1 flex flex-col gap-2">
-        {post.title && (
-          <h3 className="font-bold text-sm sm:text-base">{post.title}</h3>
         )}
-        <div className="hidden sm:block">
+      </div>
+      <div className="p-3 flex-1 flex flex-col justify-between gap-3">
+        <div className="flex flex-col gap-2">
+          {post.title && (
+            <h3 className="font-bold text-base sm:text-lg leading-snug">
+              {post.title}
+            </h3>
+          )}
           {post.caption && (
-            <p className="text-xs sm:text-sm text-ink-muted line-clamp-2">
+            <p className="text-sm sm:text-base text-ink leading-relaxed whitespace-pre-line">
               {post.caption}
             </p>
           )}
-          <div className="mt-auto pt-1 flex items-center justify-between text-[11px] text-ink-muted">
+          {post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {post.tags.slice(0, 3).map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[10px] text-ink-muted bg-paper px-2 py-0.5 rounded-full"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between text-[11px] text-ink-muted">
             <span>
               {post.author ? (
                 post.authorUrl ? (
@@ -192,20 +189,8 @@ export function PostCard({
             </span>
             <span>{formatDate(post.postedAt)}</span>
           </div>
-          {post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {post.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="text-[10px] text-ink-muted bg-paper px-2 py-0.5 rounded-full"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
+          {post.pentaComment && <PentaComment comment={post.pentaComment} />}
         </div>
-        {post.pentaComment && <PentaComment comment={post.pentaComment} />}
       </div>
     </article>
   );
