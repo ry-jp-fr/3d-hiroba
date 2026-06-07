@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import type { GalleryPost } from "@/lib/types";
+import { EngagementButtons } from "./EngagementButtons";
 import { PentaComment } from "./PentaComment";
 
 declare global {
@@ -102,6 +103,9 @@ export function PostCard({
 
   const meta = SOURCE_META[post.source];
   const isVideo = post.mediaType === "video" && post.videoUrl;
+  const pickId = post.id.startsWith("pick:") ? post.id.slice(5) : post.id;
+  const shareUrl = `/#${post.id}`;
+  const shareTitle = post.title ?? "3Dひろば の作品";
 
   const mediaInner = isVideo ? (
     <video
@@ -125,7 +129,10 @@ export function PostCard({
   );
 
   return (
-    <article className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+    <article
+      id={post.id}
+      className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col scroll-mt-24"
+    >
       <div
         className="block relative aspect-[4/5] overflow-hidden bg-paper cursor-pointer"
         onClick={() => onImageClick?.(post)}
@@ -143,7 +150,13 @@ export function PostCard({
         )}
       </div>
       <div className="p-3 flex-1 flex flex-col justify-between gap-3">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
+          <EngagementButtons
+            pickId={pickId}
+            likeCount={post.likeCount ?? 0}
+            shareUrl={shareUrl}
+            shareTitle={shareTitle}
+          />
           {post.title && (
             <h3 className="font-bold text-base sm:text-lg leading-snug">
               {post.title}

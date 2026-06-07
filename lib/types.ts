@@ -17,4 +17,5 @@ export type GalleryPost = {
   postedAt?: string;
   pentaComment?: string;
   embedHtml?: string;
+  likeCount?: number;
 };

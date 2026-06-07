@@ -28,6 +28,7 @@ export type PickEntry = {
   postedAt?: string;
   pentaComment?: string;
   embedHtml?: string;
+  likeCount?: number;
   addedAt: string;
 };
 
