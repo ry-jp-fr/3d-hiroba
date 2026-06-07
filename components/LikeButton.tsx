@@ -95,7 +95,7 @@ export function LikeButton({
         viewBox="0 0 24 24"
         fill={liked ? "#ec4899" : "none"}
         stroke={liked ? "#ec4899" : "currentColor"}
-        strokeWidth="2"
+        strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
         aria-hidden

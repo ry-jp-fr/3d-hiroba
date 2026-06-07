@@ -158,12 +158,12 @@ export function PostCard({
             shareTitle={shareTitle}
           />
           {post.title && (
-            <h3 className="font-bold text-base sm:text-lg leading-snug">
+            <h3 className="font-bold text-sm sm:text-base leading-snug">
               {post.title}
             </h3>
           )}
           {post.caption && (
-            <p className="text-sm sm:text-base text-ink leading-relaxed whitespace-pre-line">
+            <p className="text-xs sm:text-sm text-ink-muted leading-relaxed line-clamp-3 whitespace-pre-line">
               {post.caption}
             </p>
           )}
