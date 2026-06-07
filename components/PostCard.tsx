@@ -133,10 +133,7 @@ export function PostCard({
       id={post.id}
       className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col scroll-mt-24"
     >
-      <header className="flex items-center gap-2.5 px-3 py-2.5 border-b border-black/5">
-        <div className="w-9 h-9 rounded-full bg-brand-light flex items-center justify-center text-brand-dark font-bold text-sm flex-shrink-0">
-          {post.author?.trim()?.[0]?.toUpperCase() ?? "★"}
-        </div>
+      <header className="flex items-center gap-2 px-3 h-[58px] border-b border-black/5">
         <div className="flex-1 min-w-0">
           {post.author ? (
             post.authorUrl ? (
