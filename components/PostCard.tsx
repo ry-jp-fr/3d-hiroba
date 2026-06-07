@@ -163,9 +163,18 @@ export function PostCard({
             </h3>
           )}
           {post.caption && (
-            <p className="text-xs sm:text-sm text-ink-muted leading-relaxed line-clamp-3 whitespace-pre-line">
-              {post.caption}
-            </p>
+            <div className="text-xs sm:text-sm text-ink-muted leading-relaxed">
+              <p className="line-clamp-3 whitespace-pre-line">{post.caption}</p>
+              {post.caption.length > 80 && (
+                <button
+                  type="button"
+                  onClick={() => onImageClick?.(post)}
+                  className="mt-1 text-ink font-semibold hover:underline"
+                >
+                  …もっと見る
+                </button>
+              )}
+            </div>
           )}
           {post.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">

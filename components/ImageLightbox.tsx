@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { GalleryPost } from "@/lib/types";
+import { PentaComment } from "./PentaComment";
 
 declare global {
   interface Window {
@@ -37,6 +38,13 @@ function ensureInstagramEmbed() {
   document.body.appendChild(s);
 }
 
+function formatDate(iso?: string) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export function ImageLightbox({
   post,
   onClose,
@@ -60,6 +68,16 @@ export function ImageLightbox({
 
   const isVideo = post.mediaType === "video" && post.videoUrl;
   const hasEmbed = Boolean(post.embedHtml);
+  const hasMeta =
+    !hasEmbed &&
+    Boolean(
+      post.title ||
+        post.caption ||
+        post.pentaComment ||
+        post.author ||
+        post.postedAt ||
+        post.permalink,
+    );
 
   return (
     <div
@@ -67,40 +85,16 @@ export function ImageLightbox({
       onClick={onClose}
     >
       <div
-        className="relative max-w-4xl w-full h-full max-h-[90vh] flex items-center justify-center"
+        className="relative w-full max-w-4xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {hasEmbed ? (
-          <div
-            ref={embedRef}
-            className="w-full max-w-md max-h-full overflow-y-auto bg-white rounded-lg"
-            dangerouslySetInnerHTML={{ __html: post.embedHtml ?? "" }}
-          />
-        ) : isVideo ? (
-          <video
-            src={post.videoUrl}
-            poster={post.imageUrl}
-            controls
-            autoPlay
-            playsInline
-            className="w-full h-full object-contain"
-          />
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={post.imageUrl}
-            alt={post.title ?? post.caption ?? "3Dペン作品"}
-            className="w-full h-full object-contain"
-          />
-        )}
-
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-colors"
-          aria-label="Close"
+          className="absolute top-2 right-2 z-10 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition-colors"
+          aria-label="閉じる"
         >
           <svg
-            className="w-6 h-6"
+            className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -114,23 +108,80 @@ export function ImageLightbox({
           </svg>
         </button>
 
-        {!hasEmbed && post.title && (
-          <div className="absolute bottom-4 left-4 right-4 max-w-sm">
-            <p className="text-sm font-semibold text-white truncate">
-              {post.title}
-            </p>
+        {hasEmbed ? (
+          <div
+            ref={embedRef}
+            className="w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto bg-white rounded-lg"
+            dangerouslySetInnerHTML={{ __html: post.embedHtml ?? "" }}
+          />
+        ) : (
+          <div className="bg-white rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-black flex items-center justify-center max-h-[60vh] overflow-hidden">
+              {isVideo ? (
+                <video
+                  src={post.videoUrl}
+                  poster={post.imageUrl}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="max-h-[60vh] w-auto object-contain"
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={post.imageUrl}
+                  alt={post.title ?? post.caption ?? "3Dペン作品"}
+                  className="max-h-[60vh] w-auto object-contain"
+                />
+              )}
+            </div>
+            {hasMeta && (
+              <div className="overflow-y-auto p-5 flex flex-col gap-3">
+                {post.title && (
+                  <h2 className="font-bold text-lg sm:text-xl leading-snug">
+                    {post.title}
+                  </h2>
+                )}
+                <div className="flex items-center justify-between text-xs text-ink-muted">
+                  <span>
+                    {post.author ? (
+                      post.authorUrl ? (
+                        <a
+                          href={post.authorUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-ink"
+                        >
+                          {post.author}
+                        </a>
+                      ) : (
+                        post.author
+                      )
+                    ) : null}
+                  </span>
+                  <span>{formatDate(post.postedAt)}</span>
+                </div>
+                {post.caption && (
+                  <p className="text-sm sm:text-base text-ink leading-relaxed whitespace-pre-line">
+                    {post.caption}
+                  </p>
+                )}
+                {post.pentaComment && (
+                  <PentaComment comment={post.pentaComment} />
+                )}
+                {post.permalink && (
+                  <a
+                    href={post.permalink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="self-start text-sm font-semibold text-pink-600 hover:text-pink-700"
+                  >
+                    Instagramで見る
+                  </a>
+                )}
+              </div>
+            )}
           </div>
-        )}
-
-        {!hasEmbed && post.permalink && (
-          <a
-            href={post.permalink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute bottom-4 right-4 bg-pink-500 hover:bg-pink-600 text-white rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
-          >
-            Instagramで見る
-          </a>
         )}
       </div>
     </div>
