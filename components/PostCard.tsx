@@ -133,21 +133,41 @@ export function PostCard({
       id={post.id}
       className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col scroll-mt-24"
     >
+      <header className="flex items-center gap-2.5 px-3 py-2.5 border-b border-black/5">
+        <div className="w-9 h-9 rounded-full bg-brand-light flex items-center justify-center text-brand-dark font-bold text-sm flex-shrink-0">
+          {post.author?.trim()?.[0]?.toUpperCase() ?? "★"}
+        </div>
+        <div className="flex-1 min-w-0">
+          {post.author ? (
+            post.authorUrl ? (
+              <a
+                href={post.authorUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-sm truncate block hover:text-ink-muted"
+              >
+                {post.author}
+              </a>
+            ) : (
+              <p className="font-semibold text-sm truncate">{post.author}</p>
+            )
+          ) : (
+            <p className="font-semibold text-sm text-ink-muted truncate">
+              3Dひろば
+            </p>
+          )}
+        </div>
+        <span
+          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${meta.className}`}
+        >
+          {meta.label}
+        </span>
+      </header>
       <div
         className="block relative aspect-[4/5] overflow-hidden bg-paper cursor-pointer"
         onClick={() => onImageClick?.(post)}
       >
         {mediaInner}
-        <span
-          className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full ${meta.className}`}
-        >
-          {meta.label}
-        </span>
-        {post.author && (
-          <span className="absolute bottom-3 left-3 max-w-[80%] truncate text-xs font-semibold bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-ink">
-            {post.author}
-          </span>
-        )}
       </div>
       <div className="p-3 flex-1 flex flex-col justify-between gap-3">
         <div className="flex flex-col gap-3">
@@ -190,27 +210,11 @@ export function PostCard({
           )}
         </div>
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between text-[11px] text-ink-muted">
-            <span>
-              {post.author ? (
-                post.authorUrl ? (
-                  <a
-                    href={post.authorUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-ink"
-                  >
-                    {post.author}
-                  </a>
-                ) : (
-                  post.author
-                )
-              ) : (
-                "—"
-              )}
-            </span>
-            <span>{formatDate(post.postedAt)}</span>
-          </div>
+          {post.postedAt && (
+            <p className="text-[11px] text-ink-muted">
+              {formatDate(post.postedAt)}
+            </p>
+          )}
           {post.pentaComment && <PentaComment comment={post.pentaComment} />}
         </div>
       </div>
