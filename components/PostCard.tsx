@@ -41,13 +41,6 @@ function ensureInstagramEmbed() {
   document.body.appendChild(s);
 }
 
-function formatDate(iso?: string) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
-}
-
 const SOURCE_META: Record<
   GalleryPost["source"],
   { label: string; className: string }
@@ -181,8 +174,8 @@ export function PostCard({
           )}
           {post.caption && (
             <div className="text-xs sm:text-sm text-ink-muted leading-snug">
-              <p className="line-clamp-2 whitespace-pre-line">{post.caption}</p>
-              {post.caption.length > 50 && (
+              <p className="line-clamp-1 whitespace-pre-line">{post.caption}</p>
+              {post.caption.length > 30 && (
                 <button
                   type="button"
                   onClick={() => onImageClick?.(post)}
@@ -206,14 +199,7 @@ export function PostCard({
             </div>
           )}
         </div>
-        <div className="flex flex-col gap-2">
-          {post.postedAt && (
-            <p className="text-[11px] text-ink-muted">
-              {formatDate(post.postedAt)}
-            </p>
-          )}
-          {post.pentaComment && <PentaComment comment={post.pentaComment} />}
-        </div>
+        {post.pentaComment && <PentaComment comment={post.pentaComment} />}
       </div>
     </article>
   );
