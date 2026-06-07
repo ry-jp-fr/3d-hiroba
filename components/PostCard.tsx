@@ -180,9 +180,9 @@ export function PostCard({
             </h3>
           )}
           {post.caption && (
-            <div className="text-xs sm:text-sm text-ink-muted leading-relaxed">
-              <p className="line-clamp-3 whitespace-pre-line">{post.caption}</p>
-              {post.caption.length > 80 && (
+            <div className="text-xs sm:text-sm text-ink-muted leading-snug">
+              <p className="line-clamp-2 whitespace-pre-line">{post.caption}</p>
+              {post.caption.length > 50 && (
                 <button
                   type="button"
                   onClick={() => onImageClick?.(post)}
