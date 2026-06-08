@@ -1,243 +1,140 @@
-# Meta App Review Checklist
+# Meta App Review Checklist — Meta oEmbed Read
 
-This document outlines the configuration required in the Meta Developer Dashboard for approving the Instagram oEmbed API access for 3D Hiroba.
+3D Hiroba's submission for the **Meta oEmbed Read** feature (the successor
+to the deprecated "oEmbed Read", retired 2025-10-01).
 
 ## Pre-Submission Checklist
 
-### ✅ Application Setup
-- [x] Facebook App Created (App ID: 26224957440539490)
-- [x] App Role: Set as Developer
-- [x] App Mode: Development (switching to Live once approved)
-- [x] Platform Added: Website
-- [x] Environment Variables Configured:
+### Application Setup
+- [x] Facebook App created (App ID: 26224957440539490)
+- [x] Type: Consumer
+- [x] Platform: Website
+- [x] Environment variables set in Vercel:
   - `FACEBOOK_APP_ID`
   - `FACEBOOK_APP_SECRET`
+  - `BLOB_READ_WRITE_TOKEN` (for admin manual uploads)
+- [x] API version: **v19.0** (graph.facebook.com/v19.0/instagram_oembed)
 
-### ✅ Legal Requirements
-- [x] Privacy Policy Published: https://www.3d-hiroba.jp/privacy
-  - Bilingual (Japanese/English)
-  - robots: noindex, nofollow
-  - Sections: data collection, usage, storage, third parties, cookies, rights, security
-  
-- [x] Contact Information Available: https://www.3d-hiroba.jp/contact
-  - Contact form for privacy questions
-  - Direct email: help@scrib3dpen.jp
-  
-- [x] Terms of Service (Optional but recommended for future)
+### Legal & Contact
+- [x] Privacy Policy: https://www.3d-hiroba.jp/privacy (JP/EN)
+- [x] Data Deletion Instructions: https://www.3d-hiroba.jp/data-deletion
+- [x] Contact form: https://www.3d-hiroba.jp/contact
+- [x] Contact email: help@scrib3dpen.jp
 
-### 📋 Meta Dashboard Configuration Steps
-
-#### 1. Navigate to App Dashboard
-- Go to https://developers.facebook.com/apps/
-- Select App ID: 26224957440539490
-
-#### 2. Configure Basic Settings
-- **App Name**: 3D Hiroba
-- **App Type**: Consumer
-- **Category**: Photography, Art, Culture
-- **App Domain**: www.3d-hiroba.jp
-- **App Domains**: 
-  - www.3d-hiroba.jp
-  - 3d-hiroba.jp
-
-#### 3. Add Privacy Policy URL
-- Go to Settings → Basic
-- **Privacy Policy URL**: https://www.3d-hiroba.jp/privacy
-- **Data Use Statement**: See below
-
-#### 4. Configure Instagram Product
-- Left sidebar: Products
-- Search for "Instagram Graph API"
-- Click "Set Up"
-- Version: v18.0 or latest
-- Read Permissions: 
-  - `instagram_business_account` (if using business account)
-  - Or use `public_content` for public post access
-
-#### 5. Configure Permissions
-- Go to Tools → Graph API Explorer
-- Select: Instagram Basic Display
-- Permissions needed:
-  - `instagram_business_content_read`
-  - `user_profile` (for test account)
-  - Or `public_content` (public posts)
-
-#### 6. Create Test Account
-- Settings → Roles → Test Users
-- Create test account with Instagram Business Account linked
-- Grant all permissions for testing
-
-#### 7. Submit for Review
-- Go to App Roles → Switch to Live Mode
-- Or: Settings → App Roles → Submit for Live App
-- Select feature: Instagram Graph API (oEmbed)
-- Provide:
-  - Use Case Description (see DATA_USE_STATEMENT.md)
-  - Demo video (see DEMO_VIDEO_SCRIPT.md)
-  - Test account credentials (see TEST_CREDENTIALS.md)
+### Product Configuration
+- [x] Withdraw legacy "oEmbed Read" submission
+- [x] Add **Meta oEmbed Read** under Products → Add Product
+- [x] App domains: www.3d-hiroba.jp, 3d-hiroba.jp
 
 ---
 
-## Data Use Statement (to include in Meta submission)
-
-**Application**: 3D Hiroba
-**Feature**: Instagram Post oEmbed Data Retrieval
-**Purpose**: Display Instagram community posts in gallery format
-
-### Data Collected
-- Instagram Post ID / Shortcode
-- Post Author Name
-- Post Caption/Description
-- Post Thumbnail Image (OG image)
-- Post Permalink
-- Timestamp
-
-### Data Usage
-- **Primary**: Display in community gallery on homepage
-- **Secondary**: Curation and content management by site administrator
-- **Storage**: Vercel Blob (persistent image storage to prevent link expiry)
-- **Cache**: Server-side cache, max 1 hour
-
-### Data Retention
-- Posts: Indefinite (stored in Firestore)
-- Images: Indefinite (stored in Vercel Blob)
-- Cache: 1 hour TTL
-
-### Third-Party Access
-- None. Data is not shared with third parties.
-- Instagram API access is read-only for oEmbed data.
-
-### User Rights
-- Users can request data deletion via /contact page
-- Admin can delete posts from gallery
-- No data sold or transferred
-
----
-
-## Submission Form Template
-
-When submitting via Meta Dashboard, use the following template:
+## Submission Form Template (verbatim)
 
 ### "What is your app's primary purpose?"
+
 ```
-3D Hiroba is a community gallery where users and parents share 
-3D pen creations. Administrators curate featured posts from Instagram 
-using the Instagram oEmbed API to display them in a unified gallery format.
+3D Hiroba is a community gallery where children and parents share 3D pen
+creations. Administrators curate publicly available Instagram posts as
+featured items, and each featured post is rendered as the official
+Instagram embed returned by Meta oEmbed Read — both as the gallery card
+and as the detail view.
 ```
 
-### "Which Meta products or features does your app use?"
+### "Describe how your app uses Instagram data" (Use Case Description)
+
 ```
-- Instagram Graph API (oEmbed endpoint)
-- oEmbed API (for retrieving post metadata and thumbnail images)
+3D Hiroba is a community gallery for children sharing 3D pen creations.
+Administrators curate publicly available Instagram posts as featured
+items. For each featured post we call the Meta oEmbed Read endpoint
+exactly once to obtain the official embed HTML (with hidecaption=true
+and omitscript=true), and we render that HTML unchanged as the gallery
+card itself — Instagram's own embed iframe loads in the visitor's
+browser and the post image, profile, and "View on Instagram" link come
+straight from www.instagram.com. We do not download, cache, or
+otherwise persist any image, caption, author profile, or engagement
+data from Instagram. The only Instagram-derived data we store is the
+embed HTML string returned by Meta oEmbed Read, kept alongside the
+canonical permalink so the embed can be re-rendered on subsequent page
+loads; both are deleted immediately when the administrator removes the
+pick. We do not combine Instagram data with other datasets, do not use
+it for advertising, and do not share it with third parties.
 ```
 
-### "Describe how your app uses Instagram data"
-```
-The app retrieves public Instagram post metadata (author name, caption, 
-thumbnail image) via the oEmbed endpoint (graph.facebook.com/instagram_oembed) 
-to display featured community creations in a gallery grid format. 
+### "Which fields will you request from oEmbed?"
 
-The thumbnail image is cached and stored in Vercel Blob to ensure persistent 
-availability. Data is never sold, shared, or used for purposes other than 
-gallery display and content curation.
+```
+Only the html field. The endpoint is called with:
+  ?url=<canonical permalink>
+  &access_token=<APP_ID>|<APP_SECRET>
+  &omitscript=true
+  &hidecaption=true
+  &fields=html
+We do not request author_name, author_url, thumbnail_url,
+thumbnail_width, thumbnail_height, or title.
 ```
 
 ### "Who has access to this data?"
+
 ```
-- Site administrators only (for curation)
-- End users see only public-facing gallery display
-- No third-party integrations
+- Site administrators (authentication-gated /admin route).
+- End users see the public gallery and the official Instagram embed
+  loaded directly from www.instagram.com.
+- No third-party integrations.
 ```
 
 ### "What is your data retention policy?"
-```
-Posts are stored indefinitely in the application database as part of the 
-community gallery. Images are stored in Vercel Blob cloud storage. 
-Users can request deletion via the contact form (/contact page).
-```
 
-### "Have you reviewed Meta's data use terms?"
 ```
-Yes. The application complies with:
-- Instagram Platform Policy
-- Facebook Data Use Restrictions
-- Meta Platform Terms
+Only the embed HTML string and the canonical permalink are kept while
+the post is featured. There is no image cache — Instagram's embed.js
+loads the post image directly from www.instagram.com in the visitor's
+browser, so no Instagram media binaries ever pass through our servers.
+Deleting a pick removes the curation entry immediately.
 ```
 
 ---
 
-## Timeline
+## Demo Recording
 
-| Step | Estimated Time | Status |
-|------|----------------|--------|
-| Create app & configure basics | 1 hour | ✅ Done |
-| Create privacy policy page | 2-3 hours | ✅ Done |
-| Create contact page | 1-2 hours | ✅ Done |
-| Record demo video | 30-45 min | ⏳ Pending |
-| Submit for review | 15 min | ⏳ Pending |
-| Meta review process | 3-7 days | ⏳ Pending |
+See `DEMO_VIDEO_SCRIPT.md`. The demo must show:
+
+1. Admin pastes an Instagram URL.
+2. The pick appears in the gallery as the **official Instagram embed
+   iframe**, with caption hidden, embed.js loaded from
+   www.instagram.com, and all visual elements unchanged.
+3. Clicking the embed's "View on Instagram" link goes to instagram.com.
+4. Admin removes the pick → the embed disappears from the gallery and
+   nothing remains on our side.
 
 ---
 
-## Common Issues & Solutions
+## Critical "Don'ts" (lessons from previous rejection)
 
-### "Feature not available for your app"
-**Solution**: Ensure app is in Development mode initially. Request Live Mode only after approval.
-
-### "Invalid App Domain"
-**Solution**: Domain must match exactly. Use: `www.3d-hiroba.jp` (not with http://)
-
-### "Permission not approved"
-**Solution**: Submit for review with proper use case description and demo video.
-
-### "Test user not authorized"
-**Solution**: 
-1. Create test user in Meta Dashboard
-2. Assign Instagram Business Account to test user
-3. Grant permissions through Instagram API
-4. Accept invitation in test user's Instagram account
+| Avoid | Reason |
+|---|---|
+| Describing the grid as a "unified gallery format" | Reads as 1.6 violation (reproducing Instagram in a custom shell). The new design IS the Instagram embed, not a custom shell. |
+| Saying images are "stored", "cached", "persistent", etc. | We genuinely don't store any Instagram media now — say so clearly. |
+| Requesting `thumbnail_url`, `author_name`, `author_url`, `title` | These fields were removed from oEmbed on 2025-11-03. We only request `html`. |
+| Referencing the retired "oEmbed Read" feature | Replaced by "Meta oEmbed Read" on 2025-10-01. |
+| Any CSS that crops/hides parts of the embed iframe | Violates Meta's embed brand guidelines. We only use the official hidecaption=true parameter. |
 
 ---
 
 ## After Approval
 
-Once Instagram Graph API is approved:
-
-1. **Switch App to Live Mode**
-   - Settings → Basic → Switch to Live Mode
-   - This enables the app for production use
-
-2. **Update Environment Variables**
-   - FACEBOOK_APP_ID (already set)
-   - FACEBOOK_APP_SECRET (already set - was rotated)
-
-3. **Re-enable oEmbed Feature Code**
-   - Re-enable `fetchInstagramOgImage()` in `/lib/og-image.ts`
-   - Remove manual image upload workaround (or keep as fallback)
-   - Test with real Instagram URLs
-
-4. **Monitor API Usage**
-   - Check Meta Dashboard → Insights
-   - Monitor rate limits
-   - Set up alerts if needed
-
-5. **Maintain Documentation**
-   - Keep privacy policy and contact pages updated
-   - Document any data policy changes
-   - Respond to user data requests promptly
+1. Switch app to Live Mode (Settings → Basic).
+2. Confirm the URL-mode admin flow works against arbitrary public posts
+   (pre-approval it works only for posts owned by app developers).
 
 ---
 
-## Helpful Links
+## References
 
-- Meta Developer Dashboard: https://developers.facebook.com/
-- Instagram Graph API Docs: https://developers.facebook.com/docs/instagram-api
-- Instagram oEmbed Docs: https://developers.facebook.com/docs/instagram/oembed
-- API Rate Limits: https://developers.facebook.com/docs/graph-api/overview/rate-limiting
-- Data Use Policy: https://developers.facebook.com/policy/data-use/
+- Meta oEmbed Read docs: https://developers.facebook.com/docs/features-reference/oembed-read
+- Meta Platform Terms: https://developers.facebook.com/terms/
+- Instagram Brand Guidelines: https://about.meta.com/brand/resources/instagram/
 
 ---
 
-**Last Updated**: 2026-04-27
-**Status**: Ready for submission
-**Next Step**: Record demo video and submit to Meta
+**Last Updated**: 2026-05-26
+**Status**: Ready for re-submission to "Meta oEmbed Read"

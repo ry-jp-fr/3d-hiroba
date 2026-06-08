@@ -28,6 +28,7 @@ export type PickEntry = {
   postedAt?: string;
   pentaComment?: string;
   embedHtml?: string;
+  likeCount?: number;
   addedAt: string;
 };
 
@@ -320,9 +321,15 @@ export function createId(prefix: string): string {
 
 export function extractInstagramShortcode(url: string): string | null {
   const match = url.match(
-    /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/,
+    /instagram\.com\/(?:[^/?#]+\/)?(?:p|reel|tv)\/([A-Za-z0-9_-]+)/,
   );
   return match?.[1] ?? null;
+}
+
+export function canonicalInstagramPermalink(rawUrl: string): string | null {
+  const shortcode = extractInstagramShortcode(rawUrl);
+  if (!shortcode) return null;
+  return `https://www.instagram.com/p/${shortcode}/`;
 }
 
 export function normalizeHashtag(tag: string): string {

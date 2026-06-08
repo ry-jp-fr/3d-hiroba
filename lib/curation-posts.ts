@@ -23,6 +23,7 @@ function pickToPost(pick: PickEntry): GalleryPost {
     postedAt: pick.postedAt ?? pick.addedAt,
     pentaComment: pick.pentaComment,
     embedHtml: pick.embedHtml,
+    likeCount: pick.likeCount ?? 0,
   };
 }
 

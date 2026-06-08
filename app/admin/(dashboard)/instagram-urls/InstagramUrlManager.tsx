@@ -175,11 +175,9 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
       const j = await res.json().catch(() => ({}));
       const errKey = j.error ?? res.status;
       const friendly =
-        errKey === "og_not_found"
-          ? "Instagram からサムネ画像を取得できませんでした。投稿が公開されているか確認するか、サムネ画像を手動でアップロードしてください。"
-          : errKey === "og_fetch_failed"
-            ? "Instagram への接続に失敗しました。FACEBOOK_APP_ID / APP_SECRET の設定を確認してください。"
-            : `登録に失敗しました (${errKey})`;
+        errKey === "embed_unavailable_thumb_required"
+          ? "Instagram の埋め込みコード取得に失敗しました。Instagram の投稿で「シェア → 埋め込みコードをコピー」して貼り付けるか、サムネ画像を手動でアップロードしてください。"
+          : `登録に失敗しました (${errKey})`;
       setError(friendly);
       return;
     }
@@ -304,7 +302,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
           <Field
             label="Instagram 投稿URL"
             required
-            hint="登録時にサムネ画像を Instagram から自動取得し、Vercel Blob に保存します"
+            hint="Meta oEmbed Read で公式埋め込みコードを取得し、ギャラリーには Instagram 公式の埋め込みカード（キャプション非表示）として表示します。Meta 審査前は埋め込みコードを直接貼り付ける方が確実です。"
           >
             <input
               type="url"
@@ -319,7 +317,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
           <Field
             label="埋め込みコード"
             required
-            hint="Instagram で投稿を開き「シェア」→「コードをコピー」で取得したコードを貼り付けてください。サムネ画像は自動取得されます"
+            hint="Instagram の投稿で「シェア → 埋め込みコードをコピー」して貼り付け。そのままギャラリーの公式埋め込みカードとして表示されます。"
           >
             <textarea
               value={form.embedHtml}
@@ -334,7 +332,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
 
         <Field
           label="サムネイル画像（任意・フォールバック）"
-          hint="自動取得が失敗した場合のために、手動でサムネ画像をアップロードできます。指定があればそちらを優先します"
+          hint="Instagram 公式埋め込みが取得できない場合のフォールバック。指定すると埋め込みではなくこの画像をカードに表示します。"
         >
           <div className="flex items-start gap-3">
             {thumbnailPreview && (

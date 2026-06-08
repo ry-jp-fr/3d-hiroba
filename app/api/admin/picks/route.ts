@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import {
+  canonicalInstagramPermalink,
   createId,
   extractInstagramShortcode,
   normalizeHashtag,
@@ -11,10 +12,8 @@ import {
   type PickMethod,
 } from "@/lib/curation";
 import { requireAdmin } from "@/lib/admin-auth";
-import {
-  fetchInstagramOgImage,
-  downloadAndStoreImage,
-} from "@/lib/og-image";
+import { fetchInstagramEmbedHtml } from "@/lib/og-image";
+import { safeDelBlob } from "@/lib/blob-utils";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -60,11 +59,12 @@ export async function POST(req: Request) {
     ? "video"
     : "image";
 
-  const embedHtml = body.embedHtml ? String(body.embedHtml).trim() : "";
+  let embedHtml = body.embedHtml ? String(body.embedHtml).trim() : "";
   const mediaUrl = String(body.mediaUrl ?? "").trim();
 
   let permalink = typeof body.permalink === "string" ? body.permalink.trim() : "";
   let shortcode: string | null = null;
+  let canonical: string | null = null;
   if (method === "instagram-url") {
     if (!permalink) {
       return NextResponse.json(
@@ -73,12 +73,16 @@ export async function POST(req: Request) {
       );
     }
     shortcode = extractInstagramShortcode(permalink);
-    if (!shortcode) {
+    canonical = canonicalInstagramPermalink(permalink);
+    if (!shortcode || !canonical) {
       return NextResponse.json(
         { error: "invalid_instagram_url" },
         { status: 400 },
       );
     }
+    // Persist the canonical form so downstream Cron and embed calls don't
+    // re-derive it from user input.
+    permalink = canonical;
   } else if (!mediaUrl) {
     return NextResponse.json(
       { error: "media_url_required" },
@@ -86,31 +90,23 @@ export async function POST(req: Request) {
     );
   }
 
-  let resolvedMediaUrl: string | undefined = mediaUrl || undefined;
-  if (!mediaUrl && shortcode) {
-    try {
-      console.log(`[picks] fetching OG image for permalink=${permalink}`);
-      const ogUrl = await fetchInstagramOgImage(permalink);
-      if (!ogUrl) {
-        console.error(`[picks] og_not_found for shortcode=${shortcode}`);
-        return NextResponse.json(
-          { error: "og_not_found", shortcode },
-          { status: 502 },
-        );
-      }
-      console.log(`[picks] og_image_found url=${ogUrl} shortcode=${shortcode}`);
-      resolvedMediaUrl = await downloadAndStoreImage(ogUrl, shortcode);
-      console.log(`[picks] image_stored blob_url=${resolvedMediaUrl}`);
-    } catch (err) {
-      console.error("[picks] og_fetch_failed:", err);
-      return NextResponse.json(
-        {
-          error: "og_fetch_failed",
-          message: err instanceof Error ? err.message : "unknown",
-        },
-        { status: 502 },
-      );
+  if (!embedHtml && canonical) {
+    const html = await fetchInstagramEmbedHtml(canonical);
+    if (html) {
+      embedHtml = html;
+      console.log(`[picks] embed_html_fetched shortcode=${shortcode}`);
+    } else {
+      console.warn(`[picks] embed_html_unavailable shortcode=${shortcode}`);
     }
+  }
+
+  const resolvedMediaUrl: string | undefined = mediaUrl || undefined;
+
+  if (method === "instagram-url" && !embedHtml && !resolvedMediaUrl) {
+    return NextResponse.json(
+      { error: "embed_unavailable_thumb_required", shortcode },
+      { status: 502 },
+    );
   }
 
   const pick: PickEntry = {
@@ -212,10 +208,24 @@ export async function DELETE(req: Request) {
   if (!id) {
     return NextResponse.json({ error: "id_required" }, { status: 400 });
   }
-  const updated = await updateCuration((data) => ({
-    ...data,
-    picks: data.picks.filter((p) => p.id !== id),
+
+  const data = await readCuration();
+  const target = data.picks.find((p) => p.id === id);
+
+  const updated = await updateCuration((d) => ({
+    ...d,
+    picks: d.picks.filter((p) => p.id !== id),
   }));
+
+  if (target) {
+    // Per Meta Platform Terms: cached og:image is removed immediately when
+    // the administrator removes the post.
+    await Promise.all([
+      safeDelBlob(target.mediaUrl),
+      safeDelBlob(target.thumbnailUrl),
+    ]);
+  }
+
   revalidatePath("/");
   return NextResponse.json({ picks: updated.picks });
 }

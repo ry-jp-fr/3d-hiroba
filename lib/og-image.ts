@@ -4,34 +4,11 @@ const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-const OEMBED_ENDPOINT = "https://graph.facebook.com/v18.0/instagram_oembed";
+const OEMBED_ENDPOINT = "https://graph.facebook.com/v19.0/instagram_oembed";
 
-type OEmbedResponse = {
-  thumbnail_url?: string;
-  author_name?: string;
-  author_url?: string;
-  title?: string;
-  html?: string;
-};
-
-export async function fetchInstagramOgImage(
+export async function fetchInstagramEmbedHtml(
   permalink: string,
 ): Promise<string | null> {
-  const oembed = await fetchOEmbed(permalink);
-  if (oembed?.thumbnail_url) {
-    console.log(`[og-image] matched=oembed_thumbnail_url`);
-    return oembed.thumbnail_url;
-  }
-  return null;
-}
-
-export async function fetchInstagramOEmbed(
-  permalink: string,
-): Promise<OEmbedResponse | null> {
-  return await fetchOEmbed(permalink);
-}
-
-async function fetchOEmbed(permalink: string): Promise<OEmbedResponse | null> {
   const appId = process.env.FACEBOOK_APP_ID;
   const appSecret = process.env.FACEBOOK_APP_SECRET;
 
@@ -43,7 +20,10 @@ async function fetchOEmbed(permalink: string): Promise<OEmbedResponse | null> {
   }
 
   const accessToken = `${appId}|${appSecret}`;
-  const url = `${OEMBED_ENDPOINT}?url=${encodeURIComponent(permalink)}&access_token=${encodeURIComponent(accessToken)}&fields=thumbnail_url,author_name,author_url,title,html`;
+  const url =
+    `${OEMBED_ENDPOINT}?url=${encodeURIComponent(permalink)}` +
+    `&access_token=${encodeURIComponent(accessToken)}` +
+    `&omitscript=true&hidecaption=true&fields=html`;
 
   try {
     const res = await fetch(url, {
@@ -57,14 +37,17 @@ async function fetchOEmbed(permalink: string): Promise<OEmbedResponse | null> {
       );
       return null;
     }
-    const json = JSON.parse(body) as OEmbedResponse;
-    return json;
+    const json = JSON.parse(body) as { html?: string };
+    return json.html ?? null;
   } catch (err) {
     console.error(`[og-image] oembed_error`, err);
     return null;
   }
 }
 
+// Used only by the manual thumbnail upload fallback flow — admin uploads
+// an image file and we persist it to Vercel Blob so the gallery card has
+// something to render for picks without an Instagram embed.
 export async function downloadAndStoreImage(
   imageUrl: string,
   shortcode: string,
