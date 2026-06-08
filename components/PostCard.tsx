@@ -168,7 +168,7 @@ export function PostCard({
       >
         {mediaInner}
       </div>
-      <div className="px-3 pt-2">
+      <div className="px-3 py-2 border-b border-black/5">
         <button
           type="button"
           onClick={() => onImageClick?.(post)}
@@ -177,22 +177,24 @@ export function PostCard({
           アップで見る
         </button>
       </div>
-      <div className="p-3 pt-2 flex-1 flex flex-col justify-between gap-3">
-        <div className="flex flex-col gap-3">
-          <EngagementButtons
-            pickId={pickId}
-            likeCount={post.likeCount ?? 0}
-            shareUrl={shareUrl}
-            shareTitle={shareTitle}
-          />
+      <div className="px-3 py-2 border-b border-black/5">
+        <EngagementButtons
+          pickId={pickId}
+          likeCount={post.likeCount ?? 0}
+          shareUrl={shareUrl}
+          shareTitle={shareTitle}
+        />
+      </div>
+      <div className="p-3 flex-1 flex flex-col justify-between gap-3">
+        <div className="flex flex-col gap-2">
           {post.caption && (
-            <div className="text-xs sm:text-sm text-ink-muted leading-snug">
-              <p className="line-clamp-1 whitespace-pre-line">{post.caption}</p>
+            <div className="text-[11px] sm:text-xs text-ink-muted leading-snug">
+              <p className="line-clamp-2 whitespace-pre-line">{post.caption}</p>
               {post.caption.length > 30 && (
                 <button
                   type="button"
                   onClick={() => onImageClick?.(post)}
-                  className="mt-1 text-ink font-semibold hover:underline"
+                  className="mt-0.5 text-ink font-semibold hover:underline"
                 >
                   …続きを読む
                 </button>
