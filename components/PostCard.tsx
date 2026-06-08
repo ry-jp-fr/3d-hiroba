@@ -74,8 +74,9 @@ function InstagramEmbedCard({ post }: { post: GalleryPost }) {
         className="instagram-embed-wrap [&_.instagram-media]:!m-0 [&_.instagram-media]:!min-w-0 [&_.instagram-media]:!w-full"
         dangerouslySetInnerHTML={{ __html: post.embedHtml ?? "" }}
       />
+      <div className="flex-1" />
       {post.pentaComment && (
-        <div className="px-2 pb-2">
+        <div className="px-2 pt-3 pb-2">
           <PentaComment comment={post.pentaComment} />
         </div>
       )}
@@ -186,7 +187,7 @@ export function PostCard({
         />
       </div>
       {(post.caption || post.tags.length > 0) && (
-        <div className="px-3 pt-3 pb-3 flex flex-col gap-2">
+        <div className="px-3 pt-3 flex flex-col gap-2">
           {post.caption && (
             <div className="text-[11px] sm:text-xs text-ink-muted leading-snug">
               <p className="line-clamp-2 whitespace-pre-line">{post.caption}</p>
@@ -217,7 +218,7 @@ export function PostCard({
       )}
       <div className="flex-1" />
       {post.pentaComment && (
-        <div className="px-2 pb-2">
+        <div className="px-2 pt-3 pb-2">
           <PentaComment comment={post.pentaComment} />
         </div>
       )}
