@@ -174,7 +174,7 @@ export function PostCard({
           onClick={() => onImageClick?.(post)}
           className="text-xs font-semibold text-pink-600 hover:text-pink-700"
         >
-          もっと見る
+          アップで見る
         </button>
       </div>
       <div className="p-3 pt-2 flex-1 flex flex-col justify-between gap-3">
