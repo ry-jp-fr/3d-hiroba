@@ -126,7 +126,7 @@ export function PostCard({
       id={post.id}
       className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col scroll-mt-24"
     >
-      <header className="flex items-center gap-2 px-3 h-[58px] border-b border-black/5">
+      <header className="flex items-center gap-2 px-3 h-[58px] border-b border-[#efefef]">
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           {post.title ? (
             <p className="font-bold text-sm truncate leading-tight">
@@ -168,7 +168,7 @@ export function PostCard({
       >
         {mediaInner}
       </div>
-      <div className="px-3 py-2 border-b border-black/5">
+      <div className="px-3 py-2 border-b border-[#efefef]">
         <button
           type="button"
           onClick={() => onImageClick?.(post)}
@@ -177,7 +177,7 @@ export function PostCard({
           アップで見る
         </button>
       </div>
-      <div className="px-3 py-2 border-b border-black/5">
+      <div className="px-3 py-2 border-b border-[#efefef]">
         <EngagementButtons
           pickId={pickId}
           likeCount={post.likeCount ?? 0}
@@ -185,37 +185,39 @@ export function PostCard({
           shareTitle={shareTitle}
         />
       </div>
-      <div className="p-3 flex-1 flex flex-col justify-between gap-3">
-        <div className="flex flex-col gap-2">
-          {post.caption && (
-            <div className="text-[11px] sm:text-xs text-ink-muted leading-snug">
-              <p className="line-clamp-2 whitespace-pre-line">{post.caption}</p>
-              {post.caption.length > 30 && (
-                <button
-                  type="button"
-                  onClick={() => onImageClick?.(post)}
-                  className="mt-0.5 text-ink font-semibold hover:underline"
-                >
-                  …続きを読む
-                </button>
-              )}
-            </div>
-          )}
-          {post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {post.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="text-[10px] text-ink-muted bg-paper px-2 py-0.5 rounded-full"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-        {post.pentaComment && <PentaComment comment={post.pentaComment} />}
+      <div className="p-3 flex-1 flex flex-col gap-2">
+        {post.caption && (
+          <div className="text-[11px] sm:text-xs text-ink-muted leading-snug">
+            <p className="line-clamp-2 whitespace-pre-line">{post.caption}</p>
+            {post.caption.length > 30 && (
+              <button
+                type="button"
+                onClick={() => onImageClick?.(post)}
+                className="mt-0.5 text-ink font-semibold hover:underline"
+              >
+                …続きを読む
+              </button>
+            )}
+          </div>
+        )}
+        {post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {post.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] text-ink-muted bg-paper px-2 py-0.5 rounded-full"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
+      {post.pentaComment && (
+        <div className="px-2 pb-2">
+          <PentaComment comment={post.pentaComment} />
+        </div>
+      )}
     </article>
   );
 }
