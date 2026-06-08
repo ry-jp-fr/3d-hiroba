@@ -185,36 +185,39 @@ export function PostCard({
           shareTitle={shareTitle}
         />
       </div>
-      <div className="p-3 flex-1 flex flex-col gap-2">
-        {post.caption && (
-          <div className="text-[11px] sm:text-xs text-ink-muted leading-snug">
-            <p className="line-clamp-2 whitespace-pre-line">{post.caption}</p>
-            {post.caption.length > 30 && (
-              <button
-                type="button"
-                onClick={() => onImageClick?.(post)}
-                className="mt-0.5 text-ink font-semibold hover:underline"
-              >
-                …続きを読む
-              </button>
-            )}
-          </div>
-        )}
-        {post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {post.tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="text-[10px] text-ink-muted bg-paper px-2 py-0.5 rounded-full"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
+      <div className="flex-1" />
+      {(post.caption || post.tags.length > 0) && (
+        <div className="px-3 pt-3 flex flex-col gap-2">
+          {post.caption && (
+            <div className="text-[11px] sm:text-xs text-ink-muted leading-snug">
+              <p className="line-clamp-2 whitespace-pre-line">{post.caption}</p>
+              {post.caption.length > 30 && (
+                <button
+                  type="button"
+                  onClick={() => onImageClick?.(post)}
+                  className="mt-0.5 text-ink font-semibold hover:underline"
+                >
+                  …続きを読む
+                </button>
+              )}
+            </div>
+          )}
+          {post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {post.tags.slice(0, 3).map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[10px] text-ink-muted bg-paper px-2 py-0.5 rounded-full"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {post.pentaComment && (
-        <div className="px-2 pb-2">
+        <div className="px-2 pb-2 pt-2">
           <PentaComment comment={post.pentaComment} />
         </div>
       )}
