@@ -217,7 +217,7 @@ export function PostCard({
         </div>
       )}
       {post.pentaComment && (
-        <div className="px-2 pb-2 pt-2">
+        <div className="px-2 pb-2">
           <PentaComment comment={post.pentaComment} />
         </div>
       )}
