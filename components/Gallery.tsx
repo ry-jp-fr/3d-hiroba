@@ -1,12 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { GalleryPost } from "@/lib/types";
 import { PostCard } from "./PostCard";
 import { ImageLightbox } from "./ImageLightbox";
 
+function rawPickId(id: string): string {
+  return id.startsWith("pick:") ? id.slice(5) : id;
+}
+
 export function Gallery({ posts }: { posts: GalleryPost[] }) {
   const [selectedPost, setSelectedPost] = useState<GalleryPost | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const postParam = params.get("post");
+    if (!postParam) return;
+    const match = posts.find((p) => rawPickId(p.id) === postParam);
+    if (!match) return;
+    setSelectedPost(match);
+    // Scroll the underlying card into view so closing the lightbox lands
+    // the user on the post they followed the share link to.
+    const el = document.getElementById(match.id);
+    if (el) el.scrollIntoView({ behavior: "auto", block: "start" });
+  }, [posts]);
 
   if (posts.length === 0) {
     return (

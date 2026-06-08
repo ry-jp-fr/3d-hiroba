@@ -98,7 +98,7 @@ export function PostCard({
   const meta = SOURCE_META[post.source];
   const isVideo = post.mediaType === "video" && post.videoUrl;
   const pickId = post.id.startsWith("pick:") ? post.id.slice(5) : post.id;
-  const shareUrl = `/#${post.id}`;
+  const shareUrl = `/?post=${encodeURIComponent(pickId)}`;
   const shareTitle = post.title ?? "3Dひろば の作品";
 
   const mediaInner = isVideo ? (
