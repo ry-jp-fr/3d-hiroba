@@ -127,28 +127,37 @@ export function PostCard({
       className="group bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col scroll-mt-24"
     >
       <header className="flex items-center gap-2 px-3 h-[58px] border-b border-black/5">
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          {post.title ? (
+            <p className="font-bold text-sm truncate leading-tight">
+              {post.title}
+            </p>
+          ) : null}
           {post.author ? (
             post.authorUrl ? (
               <a
                 href={post.authorUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-sm truncate block hover:text-ink-muted"
+                className={`${post.title ? "text-[11px] text-ink-muted mt-0.5" : "font-semibold text-sm"} truncate block hover:text-ink`}
               >
-                {post.author}
+                {post.title ? `by ${post.author}` : post.author}
               </a>
             ) : (
-              <p className="font-semibold text-sm truncate">{post.author}</p>
+              <p
+                className={`${post.title ? "text-[11px] text-ink-muted mt-0.5" : "font-semibold text-sm"} truncate`}
+              >
+                {post.title ? `by ${post.author}` : post.author}
+              </p>
             )
-          ) : (
+          ) : !post.title ? (
             <p className="font-semibold text-sm text-ink-muted truncate">
               3Dひろば
             </p>
-          )}
+          ) : null}
         </div>
         <span
-          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${meta.className}`}
+          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${meta.className} flex-shrink-0`}
         >
           {meta.label}
         </span>
@@ -159,7 +168,16 @@ export function PostCard({
       >
         {mediaInner}
       </div>
-      <div className="p-3 flex-1 flex flex-col justify-between gap-3">
+      <div className="px-3 pt-2">
+        <button
+          type="button"
+          onClick={() => onImageClick?.(post)}
+          className="text-xs font-semibold text-pink-600 hover:text-pink-700"
+        >
+          もっと見る
+        </button>
+      </div>
+      <div className="p-3 pt-2 flex-1 flex flex-col justify-between gap-3">
         <div className="flex flex-col gap-3">
           <EngagementButtons
             pickId={pickId}
@@ -167,11 +185,6 @@ export function PostCard({
             shareUrl={shareUrl}
             shareTitle={shareTitle}
           />
-          {post.title && (
-            <h3 className="font-bold text-sm sm:text-base leading-snug">
-              {post.title}
-            </h3>
-          )}
           {post.caption && (
             <div className="text-xs sm:text-sm text-ink-muted leading-snug">
               <p className="line-clamp-1 whitespace-pre-line">{post.caption}</p>
@@ -181,7 +194,7 @@ export function PostCard({
                   onClick={() => onImageClick?.(post)}
                   className="mt-1 text-ink font-semibold hover:underline"
                 >
-                  …もっと見る
+                  …続きを読む
                 </button>
               )}
             </div>
