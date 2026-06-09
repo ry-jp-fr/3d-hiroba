@@ -2,6 +2,7 @@
 
 import { FormEvent, useRef, useState } from "react";
 import type { PickEntry } from "@/lib/curation";
+import { sanitizeEmbedHtml } from "@/lib/instagram-embed";
 
 type FormState = {
   method: "url" | "embed";
@@ -37,19 +38,6 @@ function extractShortcode(url: string): string | null {
 function extractPermalinkFromEmbed(html: string): string | null {
   const m = html.match(/data-instgrm-permalink="([^"]+)"/);
   return m?.[1] ?? null;
-}
-
-function sanitizeEmbedHtml(html: string): string {
-  const parser = new DOMParser();
-  try {
-    const doc = parser.parseFromString(html, "text/html");
-    const blockquote = doc.querySelector("blockquote.instagram-media");
-    if (!blockquote) return "";
-    blockquote.querySelectorAll("script").forEach((s) => s.remove());
-    return blockquote.outerHTML;
-  } catch {
-    return "";
-  }
 }
 
 export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {

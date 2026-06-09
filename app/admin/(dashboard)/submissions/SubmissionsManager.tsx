@@ -8,6 +8,7 @@ import {
 } from "@/lib/submission-media";
 import { captureVideoPosterBlob } from "@/lib/video-thumbnail-client";
 import { uploadImageBlob } from "@/lib/upload-image-blob";
+import { sanitizeEmbedHtml } from "@/lib/instagram-embed";
 import type { BlobMediaItem } from "@/app/api/admin/blobs/route";
 
 function isVideo(url: string | undefined): boolean {
@@ -35,7 +36,7 @@ function formatSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-type EditDraft = { title: string; name: string };
+type EditDraft = { title: string; name: string; embedHtml: string };
 type Tab = "active" | "trash";
 
 export function SubmissionsManager({
@@ -48,7 +49,11 @@ export function SubmissionsManager({
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<EditDraft>({ title: "", name: "" });
+  const [draft, setDraft] = useState<EditDraft>({
+    title: "",
+    name: "",
+    embedHtml: "",
+  });
   const [selectedMedia, setSelectedMedia] = useState<Record<string, Set<string>>>({});
   const [showCreate, setShowCreate] = useState(false);
   const [approving, setApproving] = useState<{
@@ -77,7 +82,7 @@ export function SubmissionsManager({
 
   function startEdit(s: SubmissionEntry) {
     setEditingId(s.id);
-    setDraft({ title: s.title, name: s.name });
+    setDraft({ title: s.title, name: s.name, embedHtml: "" });
     setError(null);
   }
 
@@ -88,6 +93,7 @@ export function SubmissionsManager({
   async function saveEdit(s: SubmissionEntry) {
     const title = draft.title.trim();
     const name = draft.name.trim();
+    const rawEmbed = draft.embedHtml.trim();
     if (!title) {
       setError("作品名を入力してください");
       return;
@@ -96,6 +102,23 @@ export function SubmissionsManager({
       setError("投稿者名を入力してください");
       return;
     }
+    let sanitizedEmbed: string | null = null;
+    if (rawEmbed) {
+      const cleaned = sanitizeEmbedHtml(rawEmbed);
+      if (!cleaned) {
+        setError(
+          "埋め込みコードが無効です。Instagram のシェア → 埋め込みコードをコピーで取得したコードを貼り付けてください",
+        );
+        return;
+      }
+      if (!s.approvedPickId) {
+        setError(
+          "埋め込みコードは承認済みの投稿にのみ反映できます。先に「承認してギャラリーに掲載」を実行してください",
+        );
+        return;
+      }
+      sanitizedEmbed = cleaned;
+    }
     setBusyId(s.id);
     setError(null);
     const res = await fetch("/api/admin/submissions", {
@@ -103,8 +126,8 @@ export function SubmissionsManager({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ id: s.id, title, name }),
     });
-    setBusyId(null);
     if (!res.ok) {
+      setBusyId(null);
       const detail = await res
         .json()
         .then((j) => j?.message || j?.error)
@@ -114,6 +137,30 @@ export function SubmissionsManager({
     }
     const json = (await res.json()) as { submissions: SubmissionEntry[] };
     setItems(json.submissions);
+
+    if (sanitizedEmbed && s.approvedPickId) {
+      const pickRes = await fetch("/api/admin/picks", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: s.approvedPickId,
+          updates: { embedHtml: sanitizedEmbed },
+        }),
+      });
+      if (!pickRes.ok) {
+        setBusyId(null);
+        const detail = await pickRes
+          .json()
+          .then((j) => j?.message || j?.error)
+          .catch(() => null);
+        setError(
+          `埋め込みコードの保存に失敗しました (${pickRes.status}${detail ? `: ${detail}` : ""})`,
+        );
+        return;
+      }
+    }
+
+    setBusyId(null);
     setEditingId(null);
   }
 
@@ -337,6 +384,28 @@ export function SubmissionsManager({
                             className="mt-0.5 w-full rounded-lg border border-black/10 bg-paper px-2 py-1.5 text-sm focus:outline-none focus:border-brand"
                           />
                         </label>
+                        {s.approvedPickId && s.instagramUrl && (
+                          <label className="block">
+                            <span className="text-[11px] text-ink-muted">
+                              埋め込みコード (Instagram のシェア → 埋め込みコードをコピー)
+                            </span>
+                            <textarea
+                              value={draft.embedHtml}
+                              onChange={(e) =>
+                                setDraft((d) => ({
+                                  ...d,
+                                  embedHtml: e.target.value,
+                                }))
+                              }
+                              rows={4}
+                              placeholder='<blockquote class="instagram-media" data-instgrm-permalink="..." ...>'
+                              className="mt-0.5 w-full rounded-lg border border-black/10 bg-paper px-2 py-1.5 text-xs font-mono focus:outline-none focus:border-brand"
+                            />
+                            <p className="mt-1 text-[10px] text-ink-muted">
+                              貼り付けて保存すると、ギャラリーがこの投稿の公式 Instagram 埋め込みカードに切り替わります。空欄のままだと変更なし。
+                            </p>
+                          </label>
+                        )}
                         <p className="text-[11px] text-ink-muted">
                           {formatDate(s.submittedAt)}
                         </p>
