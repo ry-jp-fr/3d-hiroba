@@ -88,12 +88,15 @@ export type SubmissionEntry = {
   name: string;
   email: string;
   imageUrl?: string;
+  mediaUrls?: string[];
   instagramUrl?: string;
   notes?: string;
   consent: boolean;
   parentalConsent: boolean;
   submittedAt: string;
   approvedPickId?: string;
+  approvedPickIds?: string[];
+  deletedAt?: string;
 };
 
 export type HomepageConfig = {
@@ -187,13 +190,16 @@ async function readFromBlob(): Promise<CurationData> {
     // Blob doesn't exist yet — seed with bundled data/curation.json.
     return await seedBlobFromLocal();
   }
-  // Append uploadedAt as a cache-buster so the Vercel Blob CDN doesn't serve
-  // stale content after an overwrite. Without this, a read-modify-write cycle
-  // can silently overwrite fresh data with a cached older version.
+  // Append a unique cache-buster so the Vercel Blob CDN never serves stale
+  // content after an overwrite. We cannot rely on `uploadedAt` alone: the
+  // list() index can lag behind a fresh put(), so reusing the same
+  // `v=<uploadedAt>` would hit a CDN entry holding the pre-write body and a
+  // read-after-write (e.g. create-then-approve) would miss the new data.
   const version = found.uploadedAt
     ? new Date(found.uploadedAt).getTime()
     : Date.now();
-  const bustedUrl = `${found.url}${found.url.includes("?") ? "&" : "?"}v=${version}`;
+  const nonce = `${version}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const bustedUrl = `${found.url}${found.url.includes("?") ? "&" : "?"}v=${nonce}`;
   const res = await fetch(bustedUrl, { cache: "no-store" });
   if (!res.ok) {
     // Do NOT fall back to default/empty data here. Returning empty would

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LogoMark } from "./LogoMark";
+import { MobileMenu } from "./MobileMenu";
 
 const navItems = [
   { href: "/", label: "みんなの作品" },
@@ -27,6 +28,7 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
+        <MobileMenu />
       </div>
     </header>
   );

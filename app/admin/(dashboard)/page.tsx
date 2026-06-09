@@ -17,7 +17,7 @@ export default async function AdminDashboardPage() {
     (p) => p.method === "manual-upload",
   ).length;
   const pendingSubmissions = curation.submissions.filter(
-    (s) => !s.approvedPickId,
+    (s) => !s.approvedPickId && !s.deletedAt,
   ).length;
   const sheetCount = curation.sheets.length;
 

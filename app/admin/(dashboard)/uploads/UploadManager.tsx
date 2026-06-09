@@ -17,6 +17,8 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { upload } from "@vercel/blob/client";
 import type { PickEntry } from "@/lib/curation";
+import { uploadImageBlob } from "@/lib/upload-image-blob";
+import { captureVideoPosterBlob } from "@/lib/video-thumbnail-client";
 
 type FormState = {
   title: string;
@@ -55,6 +57,7 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<PickEntry> | null>(null);
+  const [thumbBusy, setThumbBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
 
@@ -172,6 +175,7 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
             tags: editForm.tags,
             postedAt: editForm.postedAt,
             pentaComment: editForm.pentaComment,
+            thumbnailUrl: editForm.thumbnailUrl,
           },
         }),
       });
@@ -510,6 +514,107 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
                 className={inputCls}
               />
             </Field>
+
+            {editForm.mediaType === "video" && (
+              <Field
+                label="サムネイル画像（動画のポスター）"
+                hint="一覧に表示される静止画です。設定が無いと真っ黒になる場合があります"
+              >
+                <div className="flex items-start gap-3">
+                  {editForm.thumbnailUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={editForm.thumbnailUrl}
+                      alt="サムネ"
+                      className="w-20 h-20 rounded-xl object-cover bg-paper flex-shrink-0 border border-black/10"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-xl bg-paper border border-dashed border-black/10 flex items-center justify-center text-[10px] text-ink-muted flex-shrink-0">
+                      未設定
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-2">
+                    <div className="flex gap-2 flex-wrap">
+                      <label className="text-xs px-3 py-1.5 rounded-full bg-paper hover:bg-black/5 cursor-pointer font-semibold">
+                        画像をアップロード
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const f = e.target.files?.[0];
+                            if (!f || !editForm) return;
+                            setThumbBusy(true);
+                            try {
+                              const url = await uploadImageBlob(
+                                f,
+                                `poster-${Date.now()}-${f.name}`,
+                              );
+                              setEditForm({ ...editForm, thumbnailUrl: url });
+                            } catch (err) {
+                              setError(
+                                err instanceof Error
+                                  ? `サムネのアップロードに失敗: ${err.message}`
+                                  : "サムネのアップロードに失敗しました",
+                              );
+                            } finally {
+                              setThumbBusy(false);
+                              e.target.value = "";
+                            }
+                          }}
+                        />
+                      </label>
+                      {editForm.mediaUrl && (
+                        <button
+                          type="button"
+                          disabled={thumbBusy}
+                          onClick={async () => {
+                            if (!editForm?.mediaUrl) return;
+                            setThumbBusy(true);
+                            setError(null);
+                            try {
+                              const blob = await captureVideoPosterBlob(
+                                editForm.mediaUrl,
+                              );
+                              const url = await uploadImageBlob(
+                                blob,
+                                `poster-${Date.now()}.jpg`,
+                              );
+                              setEditForm({ ...editForm, thumbnailUrl: url });
+                            } catch (err) {
+                              setError(
+                                err instanceof Error
+                                  ? `自動生成に失敗: ${err.message}`
+                                  : "自動生成に失敗しました",
+                              );
+                            } finally {
+                              setThumbBusy(false);
+                            }
+                          }}
+                          className="text-xs px-3 py-1.5 rounded-full bg-paper hover:bg-black/5 disabled:opacity-40"
+                        >
+                          動画から自動生成
+                        </button>
+                      )}
+                      {editForm.thumbnailUrl && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditForm({ ...editForm, thumbnailUrl: "" })
+                          }
+                          className="text-xs px-3 py-1.5 rounded-full text-red-700 hover:bg-red-50"
+                        >
+                          サムネを削除
+                        </button>
+                      )}
+                    </div>
+                    {thumbBusy && (
+                      <p className="text-[11px] text-ink-muted">処理中...</p>
+                    )}
+                  </div>
+                </div>
+              </Field>
+            )}
 
             {error && <p className="text-sm text-red-600">{error}</p>}
 
