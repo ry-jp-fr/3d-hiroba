@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import {
+  canonicalInstagramPermalink,
   createId,
   readCuration,
   updateCuration,
@@ -9,6 +10,7 @@ import {
   type SubmissionEntry,
 } from "@/lib/curation";
 import { requireAdmin } from "@/lib/admin-auth";
+import { fetchInstagramEmbedHtml } from "@/lib/og-image";
 
 export const dynamic = "force-dynamic";
 
@@ -97,8 +99,34 @@ function inferMediaType(url: string | undefined): PickMediaType {
   return "image";
 }
 
-function buildPickFromSubmission(sub: SubmissionEntry): PickEntry {
+async function buildPickFromSubmission(
+  sub: SubmissionEntry,
+): Promise<PickEntry> {
   const useUpload = Boolean(sub.imageUrl);
+  let embedHtml: string | undefined;
+  let permalink = sub.instagramUrl;
+
+  if (!useUpload && sub.instagramUrl) {
+    const canonical = canonicalInstagramPermalink(sub.instagramUrl);
+    if (canonical) {
+      permalink = canonical;
+      const html = await fetchInstagramEmbedHtml(canonical);
+      if (html) {
+        embedHtml = html;
+        console.log(
+          `[admin/submissions] embed_html_fetched submission=${sub.id}`,
+        );
+      } else {
+        // Meta App Review may not be approved yet, or the post may belong to
+        // a user the app cannot read. The pick still gets created so the
+        // admin can paste the embed code manually via /admin/instagram-urls.
+        console.warn(
+          `[admin/submissions] embed_html_unavailable submission=${sub.id} url=${sub.instagramUrl}`,
+        );
+      }
+    }
+  }
+
   return {
     id: createId(useUpload ? "manual" : "url"),
     method: useUpload ? "manual-upload" : "instagram-url",
@@ -108,8 +136,9 @@ function buildPickFromSubmission(sub: SubmissionEntry): PickEntry {
     mediaUrl: sub.imageUrl,
     caption: sub.notes,
     tags: [],
-    permalink: sub.instagramUrl,
+    permalink,
     pentaComment: undefined,
+    embedHtml,
     addedAt: new Date().toISOString(),
   };
 }
@@ -130,7 +159,7 @@ export async function POST(req: Request) {
   try {
     let conflict = false;
     let missing = false;
-    const updated = await updateCuration((data) => {
+    const updated = await updateCuration(async (data) => {
       const target = data.submissions.find((s) => s.id === id);
       if (!target) {
         missing = true;
@@ -140,7 +169,7 @@ export async function POST(req: Request) {
         conflict = true;
         return data;
       }
-      const pick = buildPickFromSubmission(target);
+      const pick = await buildPickFromSubmission(target);
       return {
         ...data,
         picks: [pick, ...data.picks],
