@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { del } from "@vercel/blob";
 import {
+  canonicalInstagramPermalink,
   createId,
   readCuration,
   updateCuration,
@@ -13,6 +14,7 @@ import { getSubmissionMediaUrls } from "@/lib/submission-media";
 import { resolveMediaType } from "@/lib/media-type-server";
 import { collectUsedUrls } from "@/lib/blob-usage";
 import { requireAdmin } from "@/lib/admin-auth";
+import { fetchInstagramEmbedHtml } from "@/lib/og-image";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -138,13 +140,41 @@ export async function DELETE(req: Request) {
   return NextResponse.json({ submissions: updated.submissions });
 }
 
-function buildPickForMedia(
+async function buildPickForMedia(
   sub: SubmissionEntry,
   mediaUrl: string | undefined,
   mediaType: PickMediaType,
   thumbnailUrl?: string,
-): PickEntry {
+): Promise<PickEntry> {
   const useUpload = Boolean(mediaUrl);
+  let permalink = sub.instagramUrl;
+  let embedHtml: string | undefined;
+
+  // Instagram-url picks (no media uploaded) need the official embed HTML
+  // to render in the gallery; manual-upload picks display the local image
+  // so we don't call oEmbed for them.
+  if (!useUpload && sub.instagramUrl) {
+    const canonical = canonicalInstagramPermalink(sub.instagramUrl);
+    if (canonical) {
+      permalink = canonical;
+      const html = await fetchInstagramEmbedHtml(canonical);
+      if (html) {
+        embedHtml = html;
+        console.log(
+          `[admin/submissions] embed_html_fetched submission=${sub.id}`,
+        );
+      } else {
+        // Meta App Review may not be approved yet, or the post may belong
+        // to a user the app cannot read. Pick still gets created so the
+        // admin can paste the share-dialog embed code via
+        // /admin/instagram-urls.
+        console.warn(
+          `[admin/submissions] embed_html_unavailable submission=${sub.id} url=${sub.instagramUrl}`,
+        );
+      }
+    }
+  }
+
   return {
     id: createId(useUpload ? "manual" : "url"),
     method: useUpload ? "manual-upload" : "instagram-url",
@@ -158,8 +188,9 @@ function buildPickForMedia(
         : undefined,
     caption: sub.notes,
     tags: [],
-    permalink: sub.instagramUrl,
+    permalink,
     pentaComment: undefined,
+    embedHtml,
     addedAt: new Date().toISOString(),
   };
 }
@@ -305,6 +336,22 @@ export async function POST(req: Request) {
       }),
     );
 
+    // Build picks (including any oEmbed Read calls) before the transaction
+    // so the updateCuration callback stays read-modify-write only.
+    const picks: PickEntry[] =
+      chosen.length > 0
+        ? await Promise.all(
+            chosen.map((url) =>
+              buildPickForMedia(
+                target,
+                url,
+                typeByUrl.get(url) ?? "image",
+                thumbnailMap[url],
+              ),
+            ),
+          )
+        : [await buildPickForMedia(target, undefined, "image")];
+
     let conflict = false;
     let missing = false;
     const updated = await updateCuration((data) => {
@@ -317,17 +364,6 @@ export async function POST(req: Request) {
         conflict = true;
         return data;
       }
-      const picks: PickEntry[] =
-        chosen.length > 0
-          ? chosen.map((url) =>
-              buildPickForMedia(
-                t,
-                url,
-                typeByUrl.get(url) ?? "image",
-                thumbnailMap[url],
-              ),
-            )
-          : [buildPickForMedia(t, undefined, "image")];
 
       return {
         ...data,
