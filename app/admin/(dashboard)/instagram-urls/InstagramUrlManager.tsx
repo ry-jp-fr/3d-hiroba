@@ -248,6 +248,20 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
         tags: editForm.tags ?? [],
       };
       if (thumbnailUrl) updates.thumbnailUrl = thumbnailUrl;
+      const rawEmbed = editForm.embedHtml ?? "";
+      if (rawEmbed.trim()) {
+        const sanitized = sanitizeEmbedHtml(rawEmbed);
+        if (!sanitized) {
+          setError(
+            "埋め込みコードが無効です。Instagram のシェア → 埋め込みコードをコピーで取得したコードを貼り付けてください",
+          );
+          setBusy(false);
+          return;
+        }
+        updates.embedHtml = sanitized;
+      } else if (editForm.embedHtml === "") {
+        updates.embedHtml = "";
+      }
       const res = await fetch("/api/admin/picks", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
@@ -616,6 +630,21 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
                   setEditForm({ ...editForm, pentaComment: e.target.value })
                 }
                 rows={2}
+                className={inputCls}
+              />
+            </Field>
+
+            <Field
+              label="埋め込みコード"
+              hint="Instagram の投稿で「シェア → 埋め込みコードをコピー」したコードを貼り付け。保存するとギャラリーが公式 IG 埋め込みカードに切り替わります。空欄で保存すると埋め込みは外れます。"
+            >
+              <textarea
+                value={editForm.embedHtml ?? ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, embedHtml: e.target.value })
+                }
+                rows={4}
+                placeholder='<blockquote class="instagram-media" data-instgrm-permalink="..." ...>'
                 className={inputCls}
               />
             </Field>

@@ -190,8 +190,10 @@ export async function PATCH(req: Request) {
         next.thumbnailUrl =
           v === null || v === "" ? undefined : String(v).slice(0, 500);
       }
-      if (updates.embedHtml !== undefined)
-        next.embedHtml = String(updates.embedHtml);
+      if (updates.embedHtml !== undefined) {
+        const v = String(updates.embedHtml);
+        next.embedHtml = v.trim() ? v : undefined;
+      }
       if (updates.tags !== undefined) next.tags = parseTags(updates.tags);
       return next;
     }),
