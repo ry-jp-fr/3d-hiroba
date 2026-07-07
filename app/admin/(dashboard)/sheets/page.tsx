@@ -1,5 +1,6 @@
-import { readCuration } from "@/lib/curation";
+import { DEFAULT_SHEETS_PAGE, readCuration } from "@/lib/curation";
 import { SheetsManager } from "./SheetsManager";
+import { SheetsIntroManager } from "./SheetsIntroManager";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export default async function AdminSheetsPage() {
           ページで公開され、訪問者がダウンロード・閲覧できます。
         </p>
       </div>
+      <SheetsIntroManager initial={data.sheetsPage ?? DEFAULT_SHEETS_PAGE} />
       <SheetsManager initial={data.sheets} />
     </div>
   );

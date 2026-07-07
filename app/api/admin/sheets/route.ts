@@ -2,16 +2,45 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import {
   createId,
+  DEFAULT_SHEETS_PAGE,
   readCuration,
   updateCuration,
   type SheetDifficulty,
   type SheetEntry,
   type SheetProvider,
+  type SheetsPageConfig,
 } from "@/lib/curation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { safeDelBlob } from "@/lib/blob-utils";
 
 export const dynamic = "force-dynamic";
+
+// PUT updates the /sheets page intro copy (title + description).
+export async function PUT(req: Request) {
+  const unauth = await requireAdmin();
+  if (unauth) return unauth;
+
+  const body = await req.json().catch(() => null);
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+  }
+
+  const current = (await readCuration()).sheetsPage ?? DEFAULT_SHEETS_PAGE;
+  const next: SheetsPageConfig = {
+    title:
+      typeof body.title === "string" && body.title.trim()
+        ? body.title.trim().slice(0, 100)
+        : current.title,
+    description:
+      typeof body.description === "string" && body.description.trim()
+        ? body.description.trim().slice(0, 1000)
+        : current.description,
+  };
+
+  await updateCuration((data) => ({ ...data, sheetsPage: next }));
+  revalidatePath("/sheets");
+  return NextResponse.json({ sheetsPage: next });
+}
 
 const DIFFICULTIES: SheetDifficulty[] = [
   "beginner",
