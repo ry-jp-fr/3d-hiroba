@@ -29,6 +29,7 @@ export type PickEntry = {
   pentaComment?: string;
   embedHtml?: string;
   likeCount?: number;
+  labelKind?: "form" | "instagram";
   addedAt: string;
 };
 

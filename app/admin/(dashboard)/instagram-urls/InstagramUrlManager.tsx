@@ -234,6 +234,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
         pentaComment: editForm.pentaComment ?? "",
         postedAt: editForm.postedAt ?? "",
         tags: editForm.tags ?? [],
+        labelKind: editForm.labelKind ?? "",
       };
       if (thumbnailUrl) updates.thumbnailUrl = thumbnailUrl;
       const rawEmbed = editForm.embedHtml ?? "";
@@ -620,6 +621,39 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
                 rows={2}
                 className={inputCls}
               />
+            </Field>
+
+            <Field
+              label="表示ラベル"
+              hint="ギャラリーのカードに表示されるバッジと、絞り込みタブの分類です"
+            >
+              <div className="flex gap-2">
+                {(
+                  [
+                    { value: "form", label: "投稿フォーム" },
+                    { value: "instagram", label: "Instagram" },
+                  ] as const
+                ).map((opt) => (
+                  <label
+                    key={opt.value}
+                    className={`flex items-center gap-2 rounded-xl border px-4 py-2 cursor-pointer text-sm ${
+                      (editForm.labelKind ?? "instagram") === opt.value
+                        ? "border-brand bg-brand-light/40 font-semibold"
+                        : "border-black/10 hover:bg-black/5"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="ig-label-kind"
+                      checked={(editForm.labelKind ?? "instagram") === opt.value}
+                      onChange={() =>
+                        setEditForm({ ...editForm, labelKind: opt.value })
+                      }
+                    />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
             </Field>
 
             <Field

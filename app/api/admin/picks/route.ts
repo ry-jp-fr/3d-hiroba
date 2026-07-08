@@ -194,6 +194,12 @@ export async function PATCH(req: Request) {
         const v = String(updates.embedHtml);
         next.embedHtml = v.trim() ? v : undefined;
       }
+      if (updates.labelKind !== undefined) {
+        next.labelKind =
+          updates.labelKind === "form" || updates.labelKind === "instagram"
+            ? updates.labelKind
+            : undefined;
+      }
       if (updates.tags !== undefined) next.tags = parseTags(updates.tags);
       return next;
     }),
