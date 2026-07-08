@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import {
+  DEFAULT_SHEETS_PAGE,
   readCuration,
   type SheetDifficulty,
   type SheetProvider,
@@ -27,6 +28,7 @@ const PROVIDER_LABEL: Record<SheetProvider, string> = {
 export default async function SheetsPage() {
   const data = await readCuration();
   const sheets = data.sheets;
+  const page = data.sheetsPage ?? DEFAULT_SHEETS_PAGE;
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
@@ -34,10 +36,9 @@ export default async function SheetsPage() {
         <p className="text-sm font-semibold text-brand-dark tracking-widest">
           SHEETS
         </p>
-        <h1 className="mt-2 text-3xl md:text-4xl font-bold">なぞりシート</h1>
-        <p className="mt-4 text-ink-muted leading-relaxed max-w-2xl">
-          3Dペンで作品を作るときに使える「なぞりシート」です。<br />
-          お好きなシートを選んでPDFをダウンロードし、印刷してご利用ください。
+        <h1 className="mt-2 text-3xl md:text-4xl font-bold">{page.title}</h1>
+        <p className="mt-4 text-ink-muted leading-relaxed max-w-2xl whitespace-pre-line">
+          {page.description}
         </p>
       </header>
 

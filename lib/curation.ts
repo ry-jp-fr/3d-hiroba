@@ -112,6 +112,24 @@ export const DEFAULT_HOMEPAGE: HomepageConfig = {
     "Instagramで #3dひろば をつけて投稿すると、このひろばに掲載される可能性があります。掲載作品は全国の実店舗モニターで紹介されることも。",
 };
 
+export type BannerEntry = {
+  id: string;
+  imageUrl: string;
+  linkUrl?: string;
+  alt?: string;
+};
+
+export type SheetsPageConfig = {
+  title: string;
+  description: string;
+};
+
+export const DEFAULT_SHEETS_PAGE: SheetsPageConfig = {
+  title: "なぞりシート",
+  description:
+    "3Dペンで作品を作るときに使える「なぞりシート」です。\nお好きなシートを選んでPDFをダウンロードし、印刷してご利用ください。",
+};
+
 export type CurationData = {
   hashtags: HashtagEntry[];
   picks: PickEntry[];
@@ -120,6 +138,8 @@ export type CurationData = {
   seedManualPostsImported?: boolean;
   hero?: HeroConfig;
   homepage?: HomepageConfig;
+  banners?: BannerEntry[];
+  sheetsPage?: SheetsPageConfig;
 };
 
 type SeedManualPost = {
@@ -172,6 +192,8 @@ async function readFromFile(): Promise<CurationData> {
       seedManualPostsImported: parsed.seedManualPostsImported,
       hero: parsed.hero,
       homepage: parsed.homepage,
+      banners: parsed.banners,
+      sheetsPage: parsed.sheetsPage,
     };
   } catch {
     return { ...defaultData };
@@ -215,6 +237,8 @@ async function readFromBlob(): Promise<CurationData> {
     seedManualPostsImported: parsed.seedManualPostsImported,
     hero: parsed.hero,
     homepage: parsed.homepage,
+    banners: parsed.banners,
+    sheetsPage: parsed.sheetsPage,
   };
 }
 
@@ -233,6 +257,8 @@ async function seedBlobFromLocal(): Promise<CurationData> {
       seedManualPostsImported: parsed.seedManualPostsImported,
       hero: parsed.hero,
       homepage: parsed.homepage,
+      banners: parsed.banners,
+      sheetsPage: parsed.sheetsPage,
     };
   } catch {
     // fall through to default

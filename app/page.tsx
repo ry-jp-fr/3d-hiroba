@@ -1,4 +1,5 @@
 import { Hero } from "@/components/Hero";
+import { BannerStrip } from "@/components/BannerStrip";
 import { FilterableGallery } from "@/components/FilterTabs";
 import { getGalleryData } from "@/lib/posts";
 import { readCuration, DEFAULT_HOMEPAGE } from "@/lib/curation";
@@ -21,6 +22,7 @@ export default async function HomePage() {
   return (
     <>
       <Hero config={curation.hero} />
+      <BannerStrip banners={curation.banners ?? []} />
       <section id="gallery" className="mx-auto max-w-6xl px-5 py-12">
         <div className="mb-8">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">みんなの「できた！」</h2>
