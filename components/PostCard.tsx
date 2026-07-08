@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import type { GalleryPost } from "@/lib/types";
+import { effectiveLabelKind } from "@/lib/types";
+import type { GalleryPost, PostLabelKind } from "@/lib/types";
 import { EngagementButtons } from "./EngagementButtons";
 import { PentaComment } from "./PentaComment";
 
@@ -41,25 +42,17 @@ function ensureInstagramEmbed() {
   document.body.appendChild(s);
 }
 
-const SOURCE_META: Record<
-  GalleryPost["source"],
+const LABEL_META: Record<
+  PostLabelKind,
   { label: string; className: string }
 > = {
-  manual: {
-    label: "ピックアップ",
+  form: {
+    label: "投稿フォーム",
     className: "bg-brand-light text-brand-dark",
   },
   instagram: {
     label: "Instagram",
     className: "bg-pink-100 text-pink-700",
-  },
-  "instagram-url": {
-    label: "Instagram",
-    className: "bg-pink-100 text-pink-700",
-  },
-  upload: {
-    label: "ピックアップ",
-    className: "bg-brand-light text-brand-dark",
   },
 };
 
@@ -95,7 +88,7 @@ export function PostCard({
     return <InstagramEmbedCard post={post} />;
   }
 
-  const meta = SOURCE_META[post.source];
+  const meta = LABEL_META[effectiveLabelKind(post)];
   const isVideo = post.mediaType === "video" && post.videoUrl;
   const pickId = post.id.startsWith("pick:") ? post.id.slice(5) : post.id;
   const shareUrl = `/?post=${encodeURIComponent(pickId)}`;

@@ -24,6 +24,7 @@ function pickToPost(pick: PickEntry): GalleryPost {
     pentaComment: pick.pentaComment,
     embedHtml: pick.embedHtml,
     likeCount: pick.likeCount ?? 0,
+    labelKind: pick.labelKind,
   };
 }
 

@@ -1,14 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { effectiveLabelKind } from "@/lib/types";
 import type { GalleryPost } from "@/lib/types";
 import { Gallery } from "./Gallery";
 
-type Filter = "all" | "pickup" | "instagram";
+type Filter = "all" | "form" | "instagram";
 
 const tabs: { key: Filter; label: string }[] = [
   { key: "all", label: "すべて" },
-  { key: "pickup", label: "ピックアップ" },
+  { key: "form", label: "投稿フォーム" },
   { key: "instagram", label: "Instagram" },
 ];
 
@@ -16,14 +17,9 @@ export function FilterableGallery({ posts }: { posts: GalleryPost[] }) {
   const [filter, setFilter] = useState<Filter>("all");
   const filtered = useMemo(() => {
     if (filter === "all") return posts;
-    if (filter === "pickup") {
-      return posts.filter(
-        (p) => p.source === "manual" || p.source === "upload",
-      );
-    }
-    return posts.filter(
-      (p) => p.source === "instagram" || p.source === "instagram-url",
-    );
+    // Filter by the badge each card actually shows, so per-pick label
+    // overrides move the post between tabs consistently.
+    return posts.filter((p) => effectiveLabelKind(p) === filter);
   }, [filter, posts]);
 
   return (
