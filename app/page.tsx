@@ -22,7 +22,10 @@ export default async function HomePage() {
   return (
     <>
       <Hero config={curation.hero} />
-      <BannerStrip banners={curation.banners ?? []} />
+      <BannerStrip
+        banners={curation.banners ?? []}
+        size={curation.bannerSize ?? "md"}
+      />
       <section id="gallery" className="mx-auto max-w-6xl px-5 py-12">
         <div className="mb-8">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">みんなの「できた！」</h2>

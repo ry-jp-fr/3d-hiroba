@@ -5,6 +5,7 @@ import {
   readCuration,
   updateCuration,
   type BannerEntry,
+  type BannerSize,
 } from "@/lib/curation";
 import { requireAdmin } from "@/lib/admin-auth";
 
@@ -33,11 +34,22 @@ function normalizeBanner(input: unknown): BannerEntry | null {
   return { id, imageUrl, linkUrl, alt };
 }
 
+const BANNER_SIZES: BannerSize[] = ["sm", "md", "lg"];
+
+function parseSize(value: unknown): BannerSize | null {
+  return BANNER_SIZES.includes(value as BannerSize)
+    ? (value as BannerSize)
+    : null;
+}
+
 export async function GET() {
   const unauth = await requireAdmin();
   if (unauth) return unauth;
   const data = await readCuration();
-  return NextResponse.json({ banners: data.banners ?? [] });
+  return NextResponse.json({
+    banners: data.banners ?? [],
+    size: data.bannerSize ?? "md",
+  });
 }
 
 export async function PUT(req: Request) {
@@ -58,8 +70,13 @@ export async function PUT(req: Request) {
   const banners = (body.banners as unknown[])
     .map(normalizeBanner)
     .filter((b): b is BannerEntry => b !== null);
+  const size = parseSize(body.size);
 
-  await updateCuration((data) => ({ ...data, banners }));
+  let savedSize: BannerSize = "md";
+  await updateCuration((data) => {
+    savedSize = size ?? data.bannerSize ?? "md";
+    return { ...data, banners, bannerSize: savedSize };
+  });
   revalidatePath("/");
-  return NextResponse.json({ banners });
+  return NextResponse.json({ banners, size: savedSize });
 }

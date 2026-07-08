@@ -119,6 +119,8 @@ export type BannerEntry = {
   alt?: string;
 };
 
+export type BannerSize = "sm" | "md" | "lg";
+
 export type SheetsPageConfig = {
   title: string;
   description: string;
@@ -139,6 +141,7 @@ export type CurationData = {
   hero?: HeroConfig;
   homepage?: HomepageConfig;
   banners?: BannerEntry[];
+  bannerSize?: BannerSize;
   sheetsPage?: SheetsPageConfig;
 };
 
@@ -193,6 +196,7 @@ async function readFromFile(): Promise<CurationData> {
       hero: parsed.hero,
       homepage: parsed.homepage,
       banners: parsed.banners,
+      bannerSize: parsed.bannerSize,
       sheetsPage: parsed.sheetsPage,
     };
   } catch {
@@ -238,6 +242,7 @@ async function readFromBlob(): Promise<CurationData> {
     hero: parsed.hero,
     homepage: parsed.homepage,
     banners: parsed.banners,
+    bannerSize: parsed.bannerSize,
     sheetsPage: parsed.sheetsPage,
   };
 }
@@ -258,6 +263,7 @@ async function seedBlobFromLocal(): Promise<CurationData> {
       hero: parsed.hero,
       homepage: parsed.homepage,
       banners: parsed.banners,
+      bannerSize: parsed.bannerSize,
       sheetsPage: parsed.sheetsPage,
     };
   } catch {

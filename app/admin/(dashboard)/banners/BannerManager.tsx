@@ -1,10 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import type { BannerEntry } from "@/lib/curation";
+import type { BannerEntry, BannerSize } from "@/lib/curation";
 import { uploadImageBlob } from "@/lib/upload-image-blob";
 
 const MAX_BANNERS = 6;
+
+const SIZE_OPTIONS: {
+  value: BannerSize;
+  label: string;
+  hint: string;
+}[] = [
+  { value: "sm", label: "小", hint: "PCで3枚 + 次が見切れ" },
+  { value: "md", label: "中", hint: "PCで2枚 + 次が見切れ（標準）" },
+  { value: "lg", label: "大", hint: "PCで1.5枚。迫力重視" },
+];
 
 function newDraftBanner(): BannerEntry {
   const rand = Math.random().toString(36).slice(2, 8);
@@ -16,8 +26,15 @@ function newDraftBanner(): BannerEntry {
   };
 }
 
-export function BannerManager({ initial }: { initial: BannerEntry[] }) {
+export function BannerManager({
+  initial,
+  initialSize,
+}: {
+  initial: BannerEntry[];
+  initialSize: BannerSize;
+}) {
   const [banners, setBanners] = useState<BannerEntry[]>(initial);
+  const [size, setSize] = useState<BannerSize>(initialSize);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -78,14 +95,18 @@ export function BannerManager({ initial }: { initial: BannerEntry[] }) {
       const res = await fetch("/api/admin/banners", {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ banners }),
+        body: JSON.stringify({ banners, size }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error ?? "save_failed");
       }
-      const json = (await res.json()) as { banners: BannerEntry[] };
+      const json = (await res.json()) as {
+        banners: BannerEntry[];
+        size: BannerSize;
+      };
       setBanners(json.banners);
+      setSize(json.size);
       setMessage("保存しました");
     } catch (err) {
       setError(
@@ -100,6 +121,39 @@ export function BannerManager({ initial }: { initial: BannerEntry[] }) {
 
   return (
     <div className="space-y-6">
+      <section className="bg-white rounded-3xl border border-black/5 p-6 space-y-3">
+        <h2 className="font-bold text-lg">バナーの大きさ</h2>
+        <p className="text-xs text-ink-muted">
+          全バナー共通の表示サイズです。縦横比は 3:1 のまま変わりません。
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          {SIZE_OPTIONS.map((opt) => (
+            <label
+              key={opt.value}
+              className={`flex-1 flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-colors ${
+                size === opt.value
+                  ? "border-brand bg-brand-light/40"
+                  : "border-black/10 hover:bg-black/5"
+              }`}
+            >
+              <input
+                type="radio"
+                name="banner-size"
+                checked={size === opt.value}
+                onChange={() => setSize(opt.value)}
+                disabled={busy}
+              />
+              <span>
+                <span className="block text-sm font-semibold">{opt.label}</span>
+                <span className="block text-[11px] text-ink-muted">
+                  {opt.hint}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </section>
+
       {banners.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-black/10 bg-white p-6 text-center text-sm text-ink-muted">
           バナーはまだありません。「バナーを追加」から登録してください。

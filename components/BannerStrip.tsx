@@ -1,9 +1,30 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { BannerEntry } from "@/lib/curation";
+import type { BannerEntry, BannerSize } from "@/lib/curation";
 
-const SCROLL_STEP = 480 + 12; // banner width + gap
+// Tailwind JIT needs full class strings, so each size preset carries the
+// complete frame class list plus the matching arrow-scroll distance.
+const SIZE_PRESETS: Record<
+  BannerSize,
+  { frame: string; step: number }
+> = {
+  sm: {
+    frame:
+      "snap-start shrink-0 w-[65%] sm:w-[360px] aspect-[3/1] rounded-2xl overflow-hidden bg-paper border border-black/5",
+    step: 360 + 12,
+  },
+  md: {
+    frame:
+      "snap-start shrink-0 w-[85%] sm:w-[480px] aspect-[3/1] rounded-2xl overflow-hidden bg-paper border border-black/5",
+    step: 480 + 12,
+  },
+  lg: {
+    frame:
+      "snap-start shrink-0 w-[92%] sm:w-[720px] aspect-[3/1] rounded-2xl overflow-hidden bg-paper border border-black/5",
+    step: 720 + 12,
+  },
+};
 
 function isInternalLink(url: string): boolean {
   return url.startsWith("/");
@@ -43,8 +64,15 @@ function Chevron({ dir }: { dir: "left" | "right" }) {
   );
 }
 
-export function BannerStrip({ banners }: { banners: BannerEntry[] }) {
+export function BannerStrip({
+  banners,
+  size = "md",
+}: {
+  banners: BannerEntry[];
+  size?: BannerSize;
+}) {
   const items = banners.filter((b) => b.imageUrl);
+  const preset = SIZE_PRESETS[size] ?? SIZE_PRESETS.md;
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -67,7 +95,7 @@ export function BannerStrip({ banners }: { banners: BannerEntry[] }) {
 
   function scrollByStep(dir: -1 | 1) {
     scrollerRef.current?.scrollBy({
-      left: dir * SCROLL_STEP,
+      left: dir * preset.step,
       behavior: "smooth",
     });
   }
@@ -86,8 +114,7 @@ export function BannerStrip({ banners }: { banners: BannerEntry[] }) {
           className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {items.map((banner) => {
-            const frameCls =
-              "snap-start shrink-0 w-[85%] sm:w-[480px] aspect-[3/1] rounded-2xl overflow-hidden bg-paper border border-black/5";
+            const frameCls = preset.frame;
             if (banner.linkUrl) {
               const internal = isInternalLink(banner.linkUrl);
               return (
