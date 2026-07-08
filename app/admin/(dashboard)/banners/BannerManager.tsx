@@ -152,7 +152,7 @@ export function BannerManager({ initial }: { initial: BannerEntry[] }) {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-xs text-ink-muted">
-                  画像なし（横長 3:1 推奨）
+                  画像なし（推奨 1200×400px / 3:1）
                 </div>
               )}
             </div>
