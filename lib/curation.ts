@@ -30,6 +30,7 @@ export type PickEntry = {
   embedHtml?: string;
   likeCount?: number;
   labelKind?: "form" | "instagram";
+  hidden?: boolean;
   addedAt: string;
 };
 

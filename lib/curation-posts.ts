@@ -30,7 +30,7 @@ function pickToPost(pick: PickEntry): GalleryPost {
 
 export async function getCurationPosts(): Promise<GalleryPost[]> {
   const data = await readCuration();
-  return data.picks.map(pickToPost);
+  return data.picks.filter((p) => !p.hidden).map(pickToPost);
 }
 
 export async function getEnabledHashtags(): Promise<string[]> {
