@@ -200,6 +200,7 @@ export async function PATCH(req: Request) {
             ? updates.labelKind
             : undefined;
       }
+      if (updates.hidden !== undefined) next.hidden = Boolean(updates.hidden);
       if (updates.tags !== undefined) next.tags = parseTags(updates.tags);
       return next;
     }),

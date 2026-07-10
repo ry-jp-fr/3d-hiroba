@@ -189,6 +189,21 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
     setPicks(json.picks.filter((x) => x.method === "instagram-url"));
   }
 
+  async function toggleHidden(p: PickEntry) {
+    setError(null);
+    const res = await fetch("/api/admin/picks", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: p.id, updates: { hidden: !p.hidden } }),
+    });
+    if (!res.ok) {
+      setError("表示状態の変更に失敗しました");
+      return;
+    }
+    const json = (await res.json()) as { picks: PickEntry[] };
+    setPicks(json.picks.filter((x) => x.method === "instagram-url"));
+  }
+
   function startEdit(p: PickEntry) {
     setEditingId(p.id);
     setEditForm({ ...p });
@@ -449,7 +464,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
             {picks.map((p) => (
               <li
                 key={p.id}
-                className="flex gap-3 bg-white rounded-2xl border border-black/5 p-3"
+                className={`flex gap-3 bg-white rounded-2xl border border-black/5 p-3 ${p.hidden ? "opacity-60" : ""}`}
               >
                 {p.mediaUrl || p.thumbnailUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -462,9 +477,16 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
                   <div className="w-20 h-20 rounded-xl bg-paper flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate">
-                    {p.title ?? "(無題)"}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm truncate">
+                      {p.title ?? "(無題)"}
+                    </p>
+                    {p.hidden && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 flex-shrink-0">
+                        非表示
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-ink-muted truncate">{p.author}</p>
                   {p.permalink && (
                     <a
@@ -477,6 +499,13 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
                     </a>
                   )}
                   <div className="mt-2 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleHidden(p)}
+                      className="text-xs text-ink-muted hover:bg-black/5 px-2 py-1 rounded-full"
+                    >
+                      {p.hidden ? "表示する" : "非表示にする"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => startEdit(p)}
