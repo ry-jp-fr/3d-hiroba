@@ -14,6 +14,7 @@ const navItems = [
   { href: "/admin", label: "ダッシュボード" },
   { href: "/admin/hero", label: "トップページ（ヒーロー）" },
   { href: "/admin/banners", label: "トップページ（バナー）" },
+  { href: "/admin/campaigns", label: "キャンペーンページ" },
   { href: "/admin/homepage", label: "トップページ（テキスト）" },
   { href: "/admin/hashtags", label: "ハッシュタグ" },
   { href: "/admin/instagram-urls", label: "Instagram URL" },
