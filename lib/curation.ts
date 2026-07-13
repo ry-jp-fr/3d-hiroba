@@ -134,6 +134,20 @@ export const DEFAULT_SHEETS_PAGE: SheetsPageConfig = {
     "3Dペンで作品を作るときに使える「なぞりシート」です。\nお好きなシートを選んでPDFをダウンロードし、印刷してご利用ください。",
 };
 
+export type CampaignPage = {
+  id: string;
+  slug: string;
+  title: string;
+  imageUrl?: string;
+  body: string;
+  startDate?: string;
+  endDate?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  published: boolean;
+  createdAt: string;
+};
+
 export type CurationData = {
   hashtags: HashtagEntry[];
   picks: PickEntry[];
@@ -145,6 +159,7 @@ export type CurationData = {
   banners?: BannerEntry[];
   bannerSize?: BannerSize;
   sheetsPage?: SheetsPageConfig;
+  campaigns?: CampaignPage[];
 };
 
 type SeedManualPost = {
@@ -200,6 +215,7 @@ async function readFromFile(): Promise<CurationData> {
       banners: parsed.banners,
       bannerSize: parsed.bannerSize,
       sheetsPage: parsed.sheetsPage,
+      campaigns: parsed.campaigns,
     };
   } catch {
     return { ...defaultData };
@@ -246,6 +262,7 @@ async function readFromBlob(): Promise<CurationData> {
     banners: parsed.banners,
     bannerSize: parsed.bannerSize,
     sheetsPage: parsed.sheetsPage,
+    campaigns: parsed.campaigns,
   };
 }
 
@@ -267,6 +284,7 @@ async function seedBlobFromLocal(): Promise<CurationData> {
       banners: parsed.banners,
       bannerSize: parsed.bannerSize,
       sheetsPage: parsed.sheetsPage,
+      campaigns: parsed.campaigns,
     };
   } catch {
     // fall through to default
