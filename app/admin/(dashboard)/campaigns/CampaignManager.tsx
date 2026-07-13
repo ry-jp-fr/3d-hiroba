@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CampaignPage } from "@/lib/curation";
 import { uploadImageBlob } from "@/lib/upload-image-blob";
 
@@ -57,6 +57,23 @@ export function CampaignManager({ initial }: { initial: CampaignPage[] }) {
   const [editDraft, setEditDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [origin, setOrigin] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  async function copyUrl(c: CampaignPage) {
+    const url = `${origin}/campaign/${c.slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(c.id);
+      window.setTimeout(() => setCopiedId((cur) => (cur === c.id ? null : cur)), 1500);
+    } catch {
+      // clipboard may be unavailable; ignore
+    }
+  }
 
   async function handleUpload(
     file: File,
@@ -252,9 +269,28 @@ export function CampaignManager({ initial }: { initial: CampaignPage[] }) {
                       {c.published ? "公開中" : "非公開"}
                     </span>
                   </div>
-                  <p className="text-xs text-ink-muted truncate">
-                    /campaign/{c.slug}
-                  </p>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <p className="text-xs text-ink-muted truncate">
+                      {origin ? `${origin}/campaign/${c.slug}` : `/campaign/${c.slug}`}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => copyUrl(c)}
+                      className="flex-shrink-0 text-[11px] font-semibold text-brand-dark hover:underline"
+                    >
+                      {copiedId === c.id ? "コピーしました" : "コピー"}
+                    </button>
+                    {c.published && (
+                      <a
+                        href={`/campaign/${c.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 text-[11px] font-semibold text-brand-dark hover:underline"
+                      >
+                        開く ↗
+                      </a>
+                    )}
+                  </div>
                   {formatRange(c.startDate, c.endDate) && (
                     <p className="text-[11px] text-ink-muted mt-0.5">
                       {formatRange(c.startDate, c.endDate)}
@@ -295,6 +331,7 @@ export function CampaignManager({ initial }: { initial: CampaignPage[] }) {
           draft={draft}
           setDraft={setDraft}
           busy={busy}
+          origin={origin}
           onUpload={(f) => handleUpload(f, (url) => setDraft((d) => ({ ...d, imageUrl: url })))}
           onCancel={() => {
             setCreating(false);
@@ -322,6 +359,7 @@ export function CampaignManager({ initial }: { initial: CampaignPage[] }) {
               draft={editDraft}
               setDraft={(d) => setEditDraft(d as Draft)}
               busy={busy}
+              origin={origin}
               onUpload={(f) =>
                 handleUpload(f, (url) =>
                   setEditDraft((d) => (d ? { ...d, imageUrl: url } : d)),
@@ -345,6 +383,7 @@ function CampaignForm({
   draft,
   setDraft,
   busy,
+  origin,
   onUpload,
   onCancel,
   onSave,
@@ -354,6 +393,7 @@ function CampaignForm({
   draft: Draft;
   setDraft: (updater: Draft | ((d: Draft) => Draft)) => void;
   busy: boolean;
+  origin: string;
   onUpload: (file: File) => void;
   onCancel: () => void;
   onSave: () => void;
@@ -378,7 +418,7 @@ function CampaignForm({
       <Field
         label="スラッグ (URL)"
         required
-        hint={`公開URL: /campaign/${draft.slug || "..."} 半角英数字とハイフンのみ`}
+        hint={`公開URL: ${origin || ""}/campaign/${draft.slug || "..."}　半角英数字とハイフンのみ`}
       >
         <input
           value={draft.slug}
@@ -477,7 +517,7 @@ function CampaignForm({
           onChange={(e) => set("published", e.target.checked)}
         />
         <span className="text-sm font-semibold">
-          公開する（オフの間は /campaign/{draft.slug || "..."} が 404 になります）
+          公開する（オフの間は {origin || ""}/campaign/{draft.slug || "..."} が 404 になります）
         </span>
       </label>
 
