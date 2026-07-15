@@ -134,11 +134,18 @@ export const DEFAULT_SHEETS_PAGE: SheetsPageConfig = {
     "3Dペンで作品を作るときに使える「なぞりシート」です。\nお好きなシートを選んでPDFをダウンロードし、印刷してご利用ください。",
 };
 
+export type CampaignOverviewRow = {
+  label: string;
+  value: string;
+};
+
 export type CampaignPage = {
   id: string;
   slug: string;
   title: string;
   imageUrl?: string;
+  lead?: string;
+  overview?: CampaignOverviewRow[];
   body: string;
   startDate?: string;
   endDate?: string;

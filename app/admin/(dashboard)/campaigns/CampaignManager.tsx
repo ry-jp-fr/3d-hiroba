@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { CampaignPage } from "@/lib/curation";
+import type { CampaignOverviewRow, CampaignPage } from "@/lib/curation";
 import { uploadImageBlob } from "@/lib/upload-image-blob";
+
+const MAX_OVERVIEW_ROWS = 10;
 
 type Draft = {
   title: string;
   slug: string;
   imageUrl: string;
+  lead: string;
+  overview: CampaignOverviewRow[];
   body: string;
   startDate: string;
   endDate: string;
@@ -20,6 +24,8 @@ const EMPTY_DRAFT: Draft = {
   title: "",
   slug: "",
   imageUrl: "",
+  lead: "",
+  overview: [],
   body: "",
   startDate: "",
   endDate: "",
@@ -33,6 +39,8 @@ function toDraft(c: CampaignPage): Draft {
     title: c.title,
     slug: c.slug,
     imageUrl: c.imageUrl ?? "",
+    lead: c.lead ?? "",
+    overview: (c.overview ?? []).map((r) => ({ ...r })),
     body: c.body,
     startDate: c.startDate ?? "",
     endDate: c.endDate ?? "",
@@ -461,6 +469,75 @@ function CampaignForm({
               placeholder="または画像 URL を直接指定"
             />
           </div>
+        </div>
+      </Field>
+
+      <Field
+        label="リード文"
+        hint="タイトルの下に大きめに表示される短い紹介文。2〜3 行が目安"
+      >
+        <textarea
+          value={draft.lead}
+          onChange={(e) => set("lead", e.target.value)}
+          rows={3}
+          className={inputCls}
+          placeholder={"自由研究も、親子工作も、夏の思い出も。\n3Dペンでつくった「できた！」を、3Dひろばで見せてみよう。"}
+        />
+      </Field>
+
+      <Field
+        label="開催概要（表）"
+        hint="「期間」「対象」「参加方法」などを表形式で表示します。空欄の行は保存時に除外されます"
+      >
+        <div className="space-y-2">
+          {draft.overview.map((row, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <input
+                value={row.label}
+                onChange={(e) => {
+                  const overview = draft.overview.map((r, j) =>
+                    j === i ? { ...r, label: e.target.value } : r,
+                  );
+                  set("overview", overview);
+                }}
+                className={`${inputCls} w-32 flex-shrink-0`}
+                placeholder="項目名"
+              />
+              <input
+                value={row.value}
+                onChange={(e) => {
+                  const overview = draft.overview.map((r, j) =>
+                    j === i ? { ...r, value: e.target.value } : r,
+                  );
+                  set("overview", overview);
+                }}
+                className={inputCls}
+                placeholder="内容"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  set(
+                    "overview",
+                    draft.overview.filter((_, j) => j !== i),
+                  )
+                }
+                className="flex-shrink-0 text-xs text-red-700 hover:bg-red-50 px-2 py-1 rounded-full"
+              >
+                削除
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() =>
+              set("overview", [...draft.overview, { label: "", value: "" }])
+            }
+            disabled={draft.overview.length >= MAX_OVERVIEW_ROWS}
+            className="text-xs font-semibold rounded-full border border-black/10 px-4 py-1.5 hover:bg-black/5 disabled:opacity-40"
+          >
+            + 行を追加{draft.overview.length === 0 ? "（例: 期間 / 対象 / 参加方法 / 参加費）" : ""}
+          </button>
         </div>
       </Field>
 

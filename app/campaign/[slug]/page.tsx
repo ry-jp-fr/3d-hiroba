@@ -80,7 +80,37 @@ export default async function CampaignDetailPage({
         <h1 className="text-3xl md:text-4xl font-bold leading-tight">
           {campaign.title}
         </h1>
+        {campaign.lead && (
+          <p className="mt-4 text-lg text-ink leading-relaxed whitespace-pre-line font-medium">
+            {campaign.lead}
+          </p>
+        )}
       </header>
+
+      {campaign.overview && campaign.overview.length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-xl font-bold mb-4">開催概要</h2>
+          <div className="rounded-2xl border border-black/5 overflow-hidden bg-white">
+            <table className="w-full text-sm">
+              <tbody>
+                {campaign.overview.map((row, i) => (
+                  <tr
+                    key={i}
+                    className={i > 0 ? "border-t border-black/5" : undefined}
+                  >
+                    <th className="w-28 sm:w-36 bg-paper px-4 py-3 text-left font-semibold text-ink align-top whitespace-nowrap">
+                      {row.label}
+                    </th>
+                    <td className="px-4 py-3 text-ink leading-relaxed whitespace-pre-line">
+                      {row.value}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {campaign.body && (
         <p className="text-ink leading-relaxed whitespace-pre-line mb-10">
