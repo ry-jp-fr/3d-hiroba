@@ -249,7 +249,9 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
         pentaComment: editForm.pentaComment ?? "",
         postedAt: editForm.postedAt ?? "",
         tags: editForm.tags ?? [],
-        labelKind: editForm.labelKind ?? "",
+        // Send the value the radio is actually showing (defaults to
+        // "instagram" for this manager) so an untouched radio keeps the label.
+        labelKind: editForm.labelKind ?? "instagram",
       };
       if (thumbnailUrl) updates.thumbnailUrl = thumbnailUrl;
       const rawEmbed = editForm.embedHtml ?? "";
@@ -654,7 +656,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
 
             <Field
               label="表示ラベル"
-              hint="ギャラリーのカードに表示されるバッジと、絞り込みタブの分類です"
+              hint="「投稿フォーム」にすると Instagram 公式埋め込みをやめ、下の「サムネイル画像」で自社カードとして表示します（サムネ未設定だと画像が出ません）。「Instagram」なら公式埋め込みのまま表示します。"
             >
               <div className="flex gap-2">
                 {(

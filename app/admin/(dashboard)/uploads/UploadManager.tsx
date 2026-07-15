@@ -191,7 +191,9 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
             postedAt: editForm.postedAt,
             pentaComment: editForm.pentaComment,
             thumbnailUrl: editForm.thumbnailUrl,
-            labelKind: editForm.labelKind ?? "",
+            // Send the value the radio is actually showing (defaults to
+            // "form" here) so an untouched radio keeps the label.
+            labelKind: editForm.labelKind ?? "form",
           },
         }),
       });
@@ -578,11 +580,10 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
               </div>
             </Field>
 
-            {editForm.mediaType === "video" && (
-              <Field
-                label="サムネイル画像（動画のポスター）"
-                hint="一覧に表示される静止画です。設定が無いと真っ黒になる場合があります"
-              >
+            <Field
+              label="サムネイル画像（一覧用・任意）"
+              hint="一覧カードに表示される画像です。設定するとカードにこれが使われます。未設定なら本体画像（動画は真っ黒になる場合あり）を表示します"
+            >
                 <div className="flex items-start gap-3">
                   {editForm.thumbnailUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -627,7 +628,7 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
                           }}
                         />
                       </label>
-                      {editForm.mediaUrl && (
+                      {editForm.mediaType === "video" && editForm.mediaUrl && (
                         <button
                           type="button"
                           disabled={thumbBusy}
@@ -677,7 +678,6 @@ export function UploadManager({ initial }: { initial: PickEntry[] }) {
                   </div>
                 </div>
               </Field>
-            )}
 
             {error && <p className="text-sm text-red-600">{error}</p>}
 

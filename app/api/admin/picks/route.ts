@@ -194,11 +194,14 @@ export async function PATCH(req: Request) {
         const v = String(updates.embedHtml);
         next.embedHtml = v.trim() ? v : undefined;
       }
-      if (updates.labelKind !== undefined) {
-        next.labelKind =
-          updates.labelKind === "form" || updates.labelKind === "instagram"
-            ? updates.labelKind
-            : undefined;
+      // Only "form"/"instagram" change the label. Any other value (including
+      // "" sent by a form where the radio wasn't touched) is ignored so the
+      // stored label isn't accidentally reset.
+      if (
+        updates.labelKind === "form" ||
+        updates.labelKind === "instagram"
+      ) {
+        next.labelKind = updates.labelKind;
       }
       if (updates.hidden !== undefined) next.hidden = Boolean(updates.hidden);
       if (updates.tags !== undefined) next.tags = parseTags(updates.tags);
