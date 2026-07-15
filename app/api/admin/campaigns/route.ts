@@ -4,6 +4,7 @@ import {
   createId,
   readCuration,
   updateCuration,
+  type CampaignOverviewRow,
   type CampaignPage,
 } from "@/lib/curation";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -11,9 +12,28 @@ import { requireAdmin } from "@/lib/admin-auth";
 export const dynamic = "force-dynamic";
 
 const SLUG_RE = /^[a-z0-9-]+$/;
+const MAX_OVERVIEW_ROWS = 10;
 
 function parseSlug(value: unknown): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function parseOverview(value: unknown): CampaignOverviewRow[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const rows = value
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      const obj = row as Record<string, unknown>;
+      const label =
+        typeof obj.label === "string" ? obj.label.trim().slice(0, 40) : "";
+      const val =
+        typeof obj.value === "string" ? obj.value.trim().slice(0, 200) : "";
+      if (!label && !val) return null;
+      return { label, value: val };
+    })
+    .filter((r): r is CampaignOverviewRow => r !== null)
+    .slice(0, MAX_OVERVIEW_ROWS);
+  return rows.length > 0 ? rows : undefined;
 }
 
 export async function GET() {
@@ -56,6 +76,11 @@ export async function POST(req: Request) {
       typeof body.imageUrl === "string" && body.imageUrl.trim()
         ? body.imageUrl.trim().slice(0, 500)
         : undefined,
+    lead:
+      typeof body.lead === "string" && body.lead.trim()
+        ? body.lead.trim().slice(0, 500)
+        : undefined,
+    overview: parseOverview(body.overview),
     body: bodyText.slice(0, 5000),
     startDate:
       typeof body.startDate === "string" && body.startDate.trim()
@@ -129,6 +154,12 @@ export async function PATCH(req: Request) {
       const v = String(updates.imageUrl).trim();
       next.imageUrl = v ? v.slice(0, 500) : undefined;
     }
+    if (updates.lead !== undefined) {
+      const v = String(updates.lead).trim();
+      next.lead = v ? v.slice(0, 500) : undefined;
+    }
+    if (updates.overview !== undefined)
+      next.overview = parseOverview(updates.overview);
     if (updates.body !== undefined)
       next.body = String(updates.body).trim().slice(0, 5000);
     if (updates.startDate !== undefined) {
