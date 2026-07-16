@@ -9,14 +9,13 @@ function pickToPost(pick: PickEntry): GalleryPost {
   // of media type; otherwise fall back to the media url (for video this is
   // the poster source, for images the image itself).
   const imageUrl = pick.thumbnailUrl ?? pick.mediaUrl;
-  // When an admin relabels an Instagram-embed pick as "投稿フォーム", we stop
-  // rendering the official Instagram embed and show our own card instead, so
-  // the label and the visual match. The embed HTML is kept in storage (the
-  // detail lightbox / future relabel can still use it) but not surfaced here.
-  const embedHtml =
-    effectiveLabelKind({ source, labelKind: pick.labelKind }) === "form"
-      ? undefined
-      : pick.embedHtml;
+  // When an admin relabels an Instagram-embed pick as "投稿フォーム", we treat
+  // it as our own post: we stop rendering the official Instagram embed (show
+  // our own card instead, so label and visual match) and we drop the
+  // permalink so the detail modal's "Instagramで見る" link disappears — a
+  // 投稿フォーム post shouldn't send visitors to Instagram even if the pick
+  // still stores the source URL.
+  const isForm = effectiveLabelKind({ source, labelKind: pick.labelKind }) === "form";
   return {
     id: `pick:${pick.id}`,
     source,
@@ -28,10 +27,10 @@ function pickToPost(pick: PickEntry): GalleryPost {
     videoUrl: pick.mediaType === "video" ? pick.mediaUrl : undefined,
     caption: pick.caption,
     tags: pick.tags ?? [],
-    permalink: pick.permalink,
+    permalink: isForm ? undefined : pick.permalink,
     postedAt: pick.postedAt ?? pick.addedAt,
     pentaComment: pick.pentaComment,
-    embedHtml,
+    embedHtml: isForm ? undefined : pick.embedHtml,
     likeCount: pick.likeCount ?? 0,
     labelKind: pick.labelKind,
   };

@@ -656,7 +656,7 @@ export function InstagramUrlManager({ initial }: { initial: PickEntry[] }) {
 
             <Field
               label="表示ラベル"
-              hint="「投稿フォーム」にすると Instagram 公式埋め込みをやめ、下の「サムネイル画像」で自社カードとして表示します（サムネ未設定だと画像が出ません）。「Instagram」なら公式埋め込みのまま表示します。"
+              hint="「投稿フォーム」にすると Instagram 公式埋め込みをやめ、下の「サムネイル画像」で自社カードとして表示します（サムネ未設定だと画像が出ません）。詳細モーダルの「Instagramで見る」リンクも消え、Instagram への遷移が一切なくなります。「Instagram」なら公式埋め込みのまま表示します。"
             >
               <div className="flex gap-2">
                 {(
