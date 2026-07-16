@@ -134,6 +134,20 @@ export const DEFAULT_SHEETS_PAGE: SheetsPageConfig = {
     "3Dペンで作品を作るときに使える「なぞりシート」です。\nお好きなシートを選んでPDFをダウンロードし、印刷してご利用ください。",
 };
 
+export type PartnerSectionConfig = {
+  heading: string;
+  body: string;
+  linkText?: string;
+  linkUrl?: string;
+};
+
+export const DEFAULT_PARTNER_SECTION: PartnerSectionConfig = {
+  heading: "公式パートナーについて",
+  body: "Scrib3D（スクリブ3D）は、3Dひろばの公式パートナーです。\n3Dひろばは、Scrib3Dをはじめ、3Dペンでつくられた作品を広く歓迎しています。\nブランド、店舗、教育機関、イベント関係者で、パートナーシップに興味がある場合はお問い合わせください。",
+  linkText: "Scrib3D",
+  linkUrl: undefined,
+};
+
 export type CampaignOverviewRow = {
   label: string;
   value: string;
@@ -167,6 +181,7 @@ export type CurationData = {
   bannerSize?: BannerSize;
   sheetsPage?: SheetsPageConfig;
   campaigns?: CampaignPage[];
+  partnerSection?: PartnerSectionConfig;
 };
 
 type SeedManualPost = {
@@ -223,6 +238,7 @@ async function readFromFile(): Promise<CurationData> {
       bannerSize: parsed.bannerSize,
       sheetsPage: parsed.sheetsPage,
       campaigns: parsed.campaigns,
+      partnerSection: parsed.partnerSection,
     };
   } catch {
     return { ...defaultData };
@@ -270,6 +286,7 @@ async function readFromBlob(): Promise<CurationData> {
     bannerSize: parsed.bannerSize,
     sheetsPage: parsed.sheetsPage,
     campaigns: parsed.campaigns,
+    partnerSection: parsed.partnerSection,
   };
 }
 
@@ -292,6 +309,7 @@ async function seedBlobFromLocal(): Promise<CurationData> {
       bannerSize: parsed.bannerSize,
       sheetsPage: parsed.sheetsPage,
       campaigns: parsed.campaigns,
+      partnerSection: parsed.partnerSection,
     };
   } catch {
     // fall through to default

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { SubmissionForm } from "./SubmissionForm";
+import { PartnerSection } from "./PartnerSection";
+import { readCuration, DEFAULT_PARTNER_SECTION } from "@/lib/curation";
 
 export const metadata: Metadata = {
   title: "3Dひろばとは",
@@ -7,7 +9,10 @@ export const metadata: Metadata = {
     "3Dひろばは、3Dペンで生まれた「できた！」を集めて紹介する場所です。上手くなくても、途中でも、親子でも一人でも大歓迎。",
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const curation = await readCuration();
+  const partnerSection = curation.partnerSection ?? DEFAULT_PARTNER_SECTION;
+
   return (
     <article className="mx-auto max-w-3xl px-5 py-16">
       {/* Section 1: 3Dひろばとは */}
@@ -125,16 +130,7 @@ export default function AboutPage() {
       </section>
 
       {/* Section 6: 公式パートナーについて */}
-      <section id="partner">
-        <h2 className="text-2xl md:text-3xl font-bold mb-6">
-          公式パートナーについて
-        </h2>
-        <p className="text-ink-muted leading-relaxed">
-          Scrib3D（スクリブ3D）は、3Dひろばの公式パートナーです。<br />
-          3Dひろばは、Scrib3Dをはじめ、3Dペンでつくられた作品を広く歓迎しています。<br />
-          ブランド、店舗、教育機関、イベント関係者で、パートナーシップに興味がある場合はお問い合わせください。
-        </p>
-      </section>
+      <PartnerSection config={partnerSection} />
     </article>
   );
 }
