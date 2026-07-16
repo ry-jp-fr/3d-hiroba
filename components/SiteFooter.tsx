@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { LogoMark } from "./LogoMark";
+import type { PartnerSectionConfig } from "@/lib/curation";
+import { renderPartnerBody } from "@/lib/partner-section-link";
 
-export function SiteFooter() {
+export function SiteFooter({
+  partnerSection,
+}: {
+  partnerSection: PartnerSectionConfig;
+}) {
   return (
     <footer className="border-t border-black/5 bg-white">
       <div className="mx-auto max-w-6xl px-5 py-10 grid gap-8 md:grid-cols-4">
@@ -30,8 +36,8 @@ export function SiteFooter() {
         </div>
         <div className="text-sm">
           <h3 className="font-semibold mb-3">公式パートナー</h3>
-          <p className="text-ink-muted leading-relaxed">
-            Scrib3D（スクリブ3D）は3Dひろばの公式パートナーです。
+          <p className="text-ink-muted leading-relaxed whitespace-pre-line">
+            {renderPartnerBody(partnerSection, "text-brand-dark font-semibold hover:underline")}
           </p>
         </div>
         <div className="text-sm">

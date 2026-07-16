@@ -66,7 +66,9 @@ export async function PUT(req: Request) {
       partnerSection: normalized,
     }));
 
-    revalidatePath("/about");
+    // partnerSection is also rendered in the site-wide footer (root layout),
+    // so revalidate the whole layout tree, not just /about.
+    revalidatePath("/", "layout");
     return NextResponse.json(updated.partnerSection);
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown";

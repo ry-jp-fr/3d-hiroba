@@ -1,39 +1,5 @@
 import type { PartnerSectionConfig } from "@/lib/curation";
-
-function isInternalLink(url: string): boolean {
-  return url.startsWith("/");
-}
-
-// Splits body text on the first occurrence of linkText and wraps it in an
-// anchor. Falls back to plain text (no link) when linkText/linkUrl aren't
-// both set, or when linkText isn't actually present in the body.
-function renderBody(config: PartnerSectionConfig) {
-  const { body, linkText, linkUrl } = config;
-  if (!linkText?.trim() || !linkUrl?.trim()) {
-    return body;
-  }
-  const idx = body.indexOf(linkText);
-  if (idx === -1) return body;
-
-  const before = body.slice(0, idx);
-  const after = body.slice(idx + linkText.length);
-  const internal = isInternalLink(linkUrl);
-
-  return (
-    <>
-      {before}
-      <a
-        href={linkUrl}
-        target={internal ? undefined : "_blank"}
-        rel={internal ? undefined : "noopener noreferrer"}
-        className="text-brand-dark font-semibold hover:underline"
-      >
-        {linkText}
-      </a>
-      {after}
-    </>
-  );
-}
+import { renderPartnerBody } from "@/lib/partner-section-link";
 
 export function PartnerSection({
   config,
@@ -46,7 +12,7 @@ export function PartnerSection({
         {config.heading}
       </h2>
       <p className="text-ink-muted leading-relaxed whitespace-pre-line">
-        {renderBody(config)}
+        {renderPartnerBody(config, "text-brand-dark font-semibold hover:underline")}
       </p>
     </section>
   );

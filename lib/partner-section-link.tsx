@@ -1,0 +1,40 @@
+import type { ReactNode } from "react";
+import type { PartnerSectionConfig } from "./curation";
+
+function isInternalLink(url: string): boolean {
+  return url.startsWith("/");
+}
+
+// Splits body text on the first occurrence of linkText and wraps it in an
+// anchor. Falls back to plain text (no link) when linkText/linkUrl aren't
+// both set, or when linkText isn't actually present in the body.
+export function renderPartnerBody(
+  config: Pick<PartnerSectionConfig, "body" | "linkText" | "linkUrl">,
+  linkClassName: string,
+): ReactNode {
+  const { body, linkText, linkUrl } = config;
+  if (!linkText?.trim() || !linkUrl?.trim()) {
+    return body;
+  }
+  const idx = body.indexOf(linkText);
+  if (idx === -1) return body;
+
+  const before = body.slice(0, idx);
+  const after = body.slice(idx + linkText.length);
+  const internal = isInternalLink(linkUrl);
+
+  return (
+    <>
+      {before}
+      <a
+        href={linkUrl}
+        target={internal ? undefined : "_blank"}
+        rel={internal ? undefined : "noopener noreferrer"}
+        className={linkClassName}
+      >
+        {linkText}
+      </a>
+      {after}
+    </>
+  );
+}
