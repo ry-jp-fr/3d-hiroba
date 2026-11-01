@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { readCuration, type CampaignPage } from "@/lib/curation";
+import { readSiteCuration, type CampaignPage } from "@/lib/curation";
 
 export const revalidate = 3600;
 
 async function findCampaign(slug: string): Promise<CampaignPage | null> {
-  const data = await readCuration();
+  const data = await readSiteCuration();
   const campaign = (data.campaigns ?? []).find((c) => c.slug === slug);
   if (!campaign || !campaign.published) return null;
   return campaign;
