@@ -1,4 +1,4 @@
-import { readCuration, type PickEntry } from "./curation";
+import { readSiteCuration, type PickEntry } from "./curation";
 import { effectiveLabelKind } from "./types";
 import type { GalleryPost, PostSource } from "./types";
 
@@ -37,11 +37,11 @@ function pickToPost(pick: PickEntry): GalleryPost {
 }
 
 export async function getCurationPosts(): Promise<GalleryPost[]> {
-  const data = await readCuration();
+  const data = await readSiteCuration();
   return data.picks.filter((p) => !p.hidden).map(pickToPost);
 }
 
 export async function getEnabledHashtags(): Promise<string[]> {
-  const data = await readCuration();
+  const data = await readSiteCuration();
   return data.hashtags.filter((h) => h.enabled).map((h) => h.tag);
 }

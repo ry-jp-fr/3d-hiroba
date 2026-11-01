@@ -2,7 +2,7 @@ import { Hero } from "@/components/Hero";
 import { BannerStrip } from "@/components/BannerStrip";
 import { FilterableGallery } from "@/components/FilterTabs";
 import { getGalleryData } from "@/lib/posts";
-import { readCuration, DEFAULT_HOMEPAGE } from "@/lib/curation";
+import { readSiteCuration, DEFAULT_HOMEPAGE } from "@/lib/curation";
 
 export const revalidate = 3600;
 
@@ -14,7 +14,7 @@ export default async function HomePage() {
     instagramCount,
     instagramConfigured,
   } = await getGalleryData();
-  const curation = await readCuration();
+  const curation = await readSiteCuration();
   const homepage = curation.homepage ?? DEFAULT_HOMEPAGE;
 
   const pickupTotal = manualCount + pickCount;

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SubmissionForm } from "./SubmissionForm";
 import { PartnerSection } from "./PartnerSection";
-import { readCuration, DEFAULT_PARTNER_SECTION } from "@/lib/curation";
+import { readSiteCuration, DEFAULT_PARTNER_SECTION } from "@/lib/curation";
 
 export const metadata: Metadata = {
   title: "3Dひろばとは",
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AboutPage() {
-  const curation = await readCuration();
+  const curation = await readSiteCuration();
   const partnerSection = curation.partnerSection ?? DEFAULT_PARTNER_SECTION;
 
   return (

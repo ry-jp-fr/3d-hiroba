@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { readCuration, DEFAULT_PARTNER_SECTION } from "@/lib/curation";
+import { readSiteCuration, DEFAULT_PARTNER_SECTION } from "@/lib/curation";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.3d-hiroba.jp";
 
@@ -33,7 +33,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const curation = await readCuration();
+  const curation = await readSiteCuration();
   const partnerSection = curation.partnerSection ?? DEFAULT_PARTNER_SECTION;
 
   return (

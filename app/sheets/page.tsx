@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import {
   DEFAULT_SHEETS_PAGE,
-  readCuration,
+  readSiteCuration,
   type SheetDifficulty,
   type SheetProvider,
 } from "@/lib/curation";
@@ -26,7 +26,7 @@ const PROVIDER_LABEL: Record<SheetProvider, string> = {
 };
 
 export default async function SheetsPage() {
-  const data = await readCuration();
+  const data = await readSiteCuration();
   const sheets = data.sheets;
   const page = data.sheetsPage ?? DEFAULT_SHEETS_PAGE;
 
