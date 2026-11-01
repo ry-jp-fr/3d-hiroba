@@ -58,7 +58,7 @@ export default async function QrPage({
         )}
       </header>
 
-      <YouTubeEmbed youtubeId={page.youtubeId} title={page.title} />
+      <YouTubeEmbed youtubeId={page.youtubeId} title={page.title} vertical={page.vertical} />
 
       {page.kind === "work" && (
         <section className="mt-8 rounded-2xl bg-brand-light p-6">
