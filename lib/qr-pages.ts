@@ -6,6 +6,8 @@
 export type QrVideo = {
   title: string;
   youtubeId: string | null;
+  // Vertical (9:16) clips such as Shorts get a portrait frame.
+  vertical?: boolean;
   description?: string;
 };
 
@@ -23,31 +25,32 @@ export const HAJIMEKATA_VIDEOS: QrVideo[] = [
 ];
 
 export const MODEL_PAGES: QrModelPage[] = [
-  { kind: "model", slug: "junior", name: "スクリブ3D ジュニア", title: "スクリブ3D ジュニアの使い方", youtubeId: null },
-  { kind: "model", slug: "basic", name: "スクリブ3D ベーシック", title: "スクリブ3D ベーシックの使い方", youtubeId: null },
+  { kind: "model", slug: "junior", name: "スクリブ3D ジュニア", title: "スクリブ3D ジュニアの使い方", youtubeId: "vOknw6_SYeA", vertical: true },
+  { kind: "model", slug: "basic", name: "スクリブ3D ベーシック", title: "スクリブ3D ベーシックの使い方", youtubeId: "xeJpzsRRgK0", vertical: true },
 ];
 
 // One page per work, not per set, so a work reused in a later set keeps its QR.
 export const WORK_PAGES: QrWorkPage[] = (
   [
-    ["stick", "ステッキ"],
-    ["penguin", "ペンギン"],
-    ["bangle", "バングル"],
-    ["monstera", "モンステラ"],
-    ["snowflake", "雪の結晶"],
-    ["tree", "ツリー"],
-    ["wreath", "リース"],
-    ["ornament", "ツリーオーナメント"],
-    ["apple", "りんご"],
-    ["horse", "うま"],
-    ["reindeer", "トナカイ"],
+    ["stick", "ステッキ", null],
+    ["penguin", "ペンギン", "HKsl_tABYSE"],
+    ["bangle", "バングル", "w80-BA95TFI"],
+    ["monstera", "モンステラ", "qtZ1WLvKylA"],
+    ["snowflake", "雪の結晶", "-aKEIgGJt8Q"],
+    ["tree", "ツリー", null],
+    ["wreath", "リース", null],
+    ["ornament", "ツリーオーナメント", "wEaoWmoOKH4"],
+    ["apple", "りんご", "lr0-5O12lrg"],
+    ["horse", "うま", "Twl_pjs-mQQ"],
+    ["reindeer", "トナカイ", "TuJFRVStDzw"],
   ] as const
-).map(([slug, name]) => ({
+).map(([slug, name, youtubeId]) => ({
   kind: "work",
   slug,
   name,
   title: `${name}のつくりかた`,
-  youtubeId: null,
+  youtubeId,
+  vertical: true,
 }));
 
 // QR slugs that forward elsewhere (307, so the target can change any time).
