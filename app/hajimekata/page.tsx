@@ -31,7 +31,7 @@ export default function HajimekataPage() {
               <span className="mr-2 text-brand-dark">{String(i + 1).padStart(2, "0")}</span>
               {video.title}
             </h2>
-            <YouTubeEmbed youtubeId={video.youtubeId} title={video.title} />
+            <YouTubeEmbed youtubeId={video.youtubeId} title={video.title} vertical={video.vertical} />
             {video.description && (
               <p className="mt-2 text-sm text-ink-muted leading-relaxed whitespace-pre-line">
                 {video.description}
