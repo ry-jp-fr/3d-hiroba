@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { put, list, del } from "@vercel/blob";
+import { revalidateTag, unstable_cache } from "next/cache";
 import seedManualPostsData from "@/data/manual-posts.json";
 
 export type HashtagEntry = {
@@ -377,9 +378,41 @@ export async function readCuration(): Promise<CurationData> {
   return { ...migrated, sheets: normalizeSheets(migrated.sheets) };
 }
 
+export const CURATION_CACHE_TAG = "curation";
+
+const readCurationCached = unstable_cache(readCuration, ["curation-site"], {
+  tags: [CURATION_CACHE_TAG],
+  revalidate: 3600,
+});
+
+/**
+ * Read-only variant for public pages. readCuration() hits Blob list() on
+ * every call and its no-store fetch forces the route to render dynamically,
+ * so each page view cost two Blob Advanced Operations and exhausted the Hobby
+ * quota. This caches the result in the Data Cache (invalidated by
+ * writeCuration) and, if Blob is unavailable, falls back to the bundled
+ * data/curation.json so the site still renders. The fallback is never written
+ * back, so it cannot overwrite real data. Admin pages and updateCuration must
+ * keep using readCuration().
+ */
+export async function readSiteCuration(): Promise<CurationData> {
+  try {
+    return await readCurationCached();
+  } catch (err) {
+    console.error("readSiteCuration: falling back to bundled data", err);
+    const raw = await readFromFile();
+    return { ...raw, sheets: normalizeSheets(raw.sheets) };
+  }
+}
+
 export async function writeCuration(data: CurationData): Promise<void> {
-  if (useBlob()) return writeToBlob(data);
-  return writeToFile(data);
+  if (useBlob()) await writeToBlob(data);
+  else await writeToFile(data);
+  try {
+    revalidateTag(CURATION_CACHE_TAG, { expire: 0 });
+  } catch {
+    // Not in a request scope that allows revalidation (e.g. during render).
+  }
 }
 
 export async function updateCuration(
