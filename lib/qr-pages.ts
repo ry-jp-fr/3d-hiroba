@@ -17,11 +17,10 @@ export type QrContentPage = QrModelPage | QrWorkPage;
 
 // 「3Dペンのはじめかた」— 彫刻家・渡邊一翔さんの解説動画（YouTube限定公開）
 export const HAJIMEKATA_VIDEOS: QrVideo[] = [
-  { title: "はじめかた 1", youtubeId: null },
-  { title: "はじめかた 2", youtubeId: null },
-  { title: "はじめかた 3", youtubeId: null },
-  { title: "はじめかた 4", youtubeId: null },
-  { title: "はじめかた 5", youtubeId: null },
+  { title: "3Dペンの基本的な使い方", youtubeId: "-sbFaeNWPLc" },
+  { title: "平面の書き方と基本のコツ", youtubeId: "EHPc0hXn-Xg" },
+  { title: "コースターを作ってみよう", youtubeId: "zk258qpqshE" },
+  { title: "ペン立てを作ってみよう", youtubeId: "OeNle3zRluA" },
 ];
 
 export const MODEL_PAGES: QrModelPage[] = [
