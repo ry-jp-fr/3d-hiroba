@@ -53,10 +53,10 @@ export const WORK_PAGES: QrWorkPage[] = (
 }));
 
 // QR slugs that forward elsewhere (307, so the target can change any time).
-// line-xmas: the Christmas sheet's LINE QR. Point it at the エルメ QRコード
-// アクション URL for the sheet once that action exists.
+// line-xmas: the Christmas sheet's LINE QR → エルメ QRコードアクション
+// 「なぞりシート（クリスマス）」(tags なぞりシート購入, sends 特典_機種パネル).
 export const QR_REDIRECTS: Record<string, string> = {
-  "line-xmas": "https://line.me/R/ti/p/@084gqpja",
+  "line-xmas": "https://s.lmes.jp/landing-qr/2011389441-xwbPjx45?uLand=EwXkpd",
 };
 
 export const LINE_XMAS_PATH = "/q/line-xmas";
