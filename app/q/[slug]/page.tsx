@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
 import {
+  HAJIMEKATA_VIDEOS,
   LINE_XMAS_PATH,
   MODEL_PAGES,
   QR_REDIRECTS,
@@ -58,7 +59,7 @@ export default async function QrPage({
         )}
       </header>
 
-      <YouTubeEmbed youtubeId={page.youtubeId} title={page.title} />
+      <YouTubeEmbed youtubeId={page.youtubeId} title={page.title} vertical={page.vertical} />
 
       {page.kind === "work" && (
         <section className="mt-8 rounded-2xl bg-brand-light p-6">
@@ -78,7 +79,7 @@ export default async function QrPage({
       <section className="mt-6 rounded-2xl border border-black/5 bg-white p-6">
         <h2 className="font-bold text-lg">LINEで「3Dペンのはじめかた」をプレゼント</h2>
         <p className="mt-2 text-sm text-ink-muted leading-relaxed">
-          彫刻家・渡邊一翔さんが、3Dペンの基本を5本の動画で解説しています。
+          彫刻家・渡邊一翔さんが、3Dペンの基本を{HAJIMEKATA_VIDEOS.length}本の動画で解説しています。
           スクリブ3Dジャパン公式LINEに登録すると届きます。
         </p>
         <a

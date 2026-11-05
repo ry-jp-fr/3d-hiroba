@@ -19,7 +19,7 @@ export default function HajimekataPage() {
         </p>
         <h1 className="mt-2 text-2xl md:text-3xl font-bold">3Dペンのはじめかた</h1>
         <p className="mt-3 text-ink-muted leading-relaxed">
-          彫刻家・渡邊一翔さんが、3Dペンの基本を5本の動画で解説しています。
+          彫刻家・渡邊一翔さんが、3Dペンの基本を{HAJIMEKATA_VIDEOS.length}本の動画で解説しています。
           順番に見ながら、まずは1本の線から始めてみましょう。
         </p>
       </header>
@@ -31,7 +31,7 @@ export default function HajimekataPage() {
               <span className="mr-2 text-brand-dark">{String(i + 1).padStart(2, "0")}</span>
               {video.title}
             </h2>
-            <YouTubeEmbed youtubeId={video.youtubeId} title={video.title} />
+            <YouTubeEmbed youtubeId={video.youtubeId} title={video.title} vertical={video.vertical} />
             {video.description && (
               <p className="mt-2 text-sm text-ink-muted leading-relaxed whitespace-pre-line">
                 {video.description}

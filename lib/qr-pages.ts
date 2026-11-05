@@ -6,6 +6,8 @@
 export type QrVideo = {
   title: string;
   youtubeId: string | null;
+  // Vertical (9:16) clips such as Shorts get a portrait frame.
+  vertical?: boolean;
   description?: string;
 };
 
@@ -15,39 +17,39 @@ export type QrContentPage = QrModelPage | QrWorkPage;
 
 // 「3Dペンのはじめかた」— 彫刻家・渡邊一翔さんの解説動画（YouTube限定公開）
 export const HAJIMEKATA_VIDEOS: QrVideo[] = [
-  { title: "はじめかた 1", youtubeId: null },
-  { title: "はじめかた 2", youtubeId: null },
-  { title: "はじめかた 3", youtubeId: null },
-  { title: "はじめかた 4", youtubeId: null },
-  { title: "はじめかた 5", youtubeId: null },
+  { title: "3Dペンの基本的な使い方", youtubeId: "-sbFaeNWPLc" },
+  { title: "平面の書き方と基本のコツ", youtubeId: "EHPc0hXn-Xg" },
+  { title: "コースターを作ってみよう", youtubeId: "zk258qpqshE" },
+  { title: "ペン立てを作ってみよう", youtubeId: "OeNle3zRluA" },
 ];
 
 export const MODEL_PAGES: QrModelPage[] = [
-  { kind: "model", slug: "junior", name: "スクリブ3D ジュニア", title: "スクリブ3D ジュニアの使い方", youtubeId: null },
-  { kind: "model", slug: "basic", name: "スクリブ3D ベーシック", title: "スクリブ3D ベーシックの使い方", youtubeId: null },
+  { kind: "model", slug: "junior", name: "スクリブ3D ジュニア", title: "スクリブ3D ジュニアの使い方", youtubeId: "uj1zD9FAJzc", vertical: true },
+  { kind: "model", slug: "basic", name: "スクリブ3D ベーシック", title: "スクリブ3D ベーシックの使い方", youtubeId: "Ka8AL-Xxe-0", vertical: true },
 ];
 
 // One page per work, not per set, so a work reused in a later set keeps its QR.
 export const WORK_PAGES: QrWorkPage[] = (
   [
-    ["stick", "ステッキ"],
-    ["penguin", "ペンギン"],
-    ["bangle", "バングル"],
-    ["monstera", "モンステラ"],
-    ["snowflake", "雪の結晶"],
-    ["tree", "ツリー"],
-    ["wreath", "リース"],
-    ["ornament", "ツリーオーナメント"],
-    ["apple", "りんご"],
-    ["horse", "うま"],
-    ["reindeer", "トナカイ"],
+    ["stick", "ステッキ", "rbj9LItD-oc"],
+    ["penguin", "ペンギン", "IQXSk-9Mwak"],
+    ["bangle", "バングル", "wNFOOPe6ZYs"],
+    ["monstera", "モンステラ", "-1KJk5aBz4Y"],
+    ["snowflake", "雪の結晶", "yOaheiPfer4"],
+    ["tree", "ツリー", "LnXU5C7IKt8"],
+    ["wreath", "リース", "yqE_Ghu5Yvw"],
+    ["ornament", "ツリーオーナメント", "bR_GwzHpy5k"],
+    ["apple", "りんご", "9GHGLlovX5I"],
+    ["horse", "うま", "qQg-w6qEg0c"],
+    ["reindeer", "トナカイ", "Vt099163OZk"],
   ] as const
-).map(([slug, name]) => ({
+).map(([slug, name, youtubeId]) => ({
   kind: "work",
   slug,
   name,
   title: `${name}のつくりかた`,
-  youtubeId: null,
+  youtubeId,
+  vertical: true,
 }));
 
 // QR slugs that forward elsewhere (307, so the target can change any time).
