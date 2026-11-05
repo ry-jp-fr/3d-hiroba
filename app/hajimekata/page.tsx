@@ -19,7 +19,7 @@ export default function HajimekataPage() {
         </p>
         <h1 className="mt-2 text-2xl md:text-3xl font-bold">3Dペンのはじめかた</h1>
         <p className="mt-3 text-ink-muted leading-relaxed">
-          彫刻家・渡邊一翔さんが、3Dペンの基本を5本の動画で解説しています。
+          彫刻家・渡邊一翔さんが、3Dペンの基本を{HAJIMEKATA_VIDEOS.length}本の動画で解説しています。
           順番に見ながら、まずは1本の線から始めてみましょう。
         </p>
       </header>
