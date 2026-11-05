@@ -24,24 +24,24 @@ export const HAJIMEKATA_VIDEOS: QrVideo[] = [
 ];
 
 export const MODEL_PAGES: QrModelPage[] = [
-  { kind: "model", slug: "junior", name: "スクリブ3D ジュニア", title: "スクリブ3D ジュニアの使い方", youtubeId: "vOknw6_SYeA", vertical: true },
-  { kind: "model", slug: "basic", name: "スクリブ3D ベーシック", title: "スクリブ3D ベーシックの使い方", youtubeId: "xeJpzsRRgK0", vertical: true },
+  { kind: "model", slug: "junior", name: "スクリブ3D ジュニア", title: "スクリブ3D ジュニアの使い方", youtubeId: "uj1zD9FAJzc", vertical: true },
+  { kind: "model", slug: "basic", name: "スクリブ3D ベーシック", title: "スクリブ3D ベーシックの使い方", youtubeId: "Ka8AL-Xxe-0", vertical: true },
 ];
 
 // One page per work, not per set, so a work reused in a later set keeps its QR.
 export const WORK_PAGES: QrWorkPage[] = (
   [
-    ["stick", "ステッキ", null],
-    ["penguin", "ペンギン", "HKsl_tABYSE"],
-    ["bangle", "バングル", "w80-BA95TFI"],
-    ["monstera", "モンステラ", "qtZ1WLvKylA"],
-    ["snowflake", "雪の結晶", "-aKEIgGJt8Q"],
-    ["tree", "ツリー", null],
-    ["wreath", "リース", null],
-    ["ornament", "ツリーオーナメント", "wEaoWmoOKH4"],
-    ["apple", "りんご", "lr0-5O12lrg"],
-    ["horse", "うま", "Twl_pjs-mQQ"],
-    ["reindeer", "トナカイ", "TuJFRVStDzw"],
+    ["stick", "ステッキ", "rbj9LItD-oc"],
+    ["penguin", "ペンギン", "IQXSk-9Mwak"],
+    ["bangle", "バングル", "wNFOOPe6ZYs"],
+    ["monstera", "モンステラ", "-1KJk5aBz4Y"],
+    ["snowflake", "雪の結晶", "yOaheiPfer4"],
+    ["tree", "ツリー", "LnXU5C7IKt8"],
+    ["wreath", "リース", "yqE_Ghu5Yvw"],
+    ["ornament", "ツリーオーナメント", "bR_GwzHpy5k"],
+    ["apple", "りんご", "9GHGLlovX5I"],
+    ["horse", "うま", "qQg-w6qEg0c"],
+    ["reindeer", "トナカイ", "Vt099163OZk"],
   ] as const
 ).map(([slug, name, youtubeId]) => ({
   kind: "work",
