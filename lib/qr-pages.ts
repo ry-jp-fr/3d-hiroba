@@ -39,6 +39,7 @@ export const WORK_PAGES: QrWorkPage[] = (
     ["tree", "ツリー", "LnXU5C7IKt8"],
     ["wreath", "リース", "yqE_Ghu5Yvw"],
     ["ornament", "ツリーオーナメント", "bR_GwzHpy5k"],
+    ["ornament2", "ツリーオーナメント2", null],
     ["apple", "りんご", "9GHGLlovX5I"],
     ["horse", "うま", "qQg-w6qEg0c"],
     ["reindeer", "トナカイ", "Vt099163OZk"],
