@@ -24,7 +24,7 @@ export const HAJIMEKATA_VIDEOS: QrVideo[] = [
 ];
 
 export const MODEL_PAGES: QrModelPage[] = [
-  { kind: "model", slug: "junior", name: "スクリブ3D ジュニア", title: "スクリブ3D ジュニアの使い方", youtubeId: "uj1zD9FAJzc", vertical: true },
+  { kind: "model", slug: "junior", name: "スクリブ3D ジュニア", title: "スクリブ3D ジュニアの使い方", youtubeId: "6PZJFgn6cXc", vertical: true },
   { kind: "model", slug: "basic", name: "スクリブ3D ベーシック", title: "スクリブ3D ベーシックの使い方", youtubeId: "Ka8AL-Xxe-0", vertical: true },
 ];
 
