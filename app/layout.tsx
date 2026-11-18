@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { readSiteCuration, DEFAULT_PARTNER_SECTION } from "@/lib/curation";
+import { siteJsonLd } from "@/lib/organization";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.3d-hiroba.jp";
 
@@ -33,15 +33,16 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const curation = await readSiteCuration();
-  const partnerSection = curation.partnerSection ?? DEFAULT_PARTNER_SECTION;
-
   return (
     <html lang="ja">
       <body className="min-h-screen flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd(siteUrl)) }}
+        />
         <SiteHeader />
         <main className="flex-1">{children}</main>
-        <SiteFooter partnerSection={partnerSection} />
+        <SiteFooter />
       </body>
     </html>
   );
