@@ -1,13 +1,8 @@
 import Link from "next/link";
 import { LogoMark } from "./LogoMark";
-import type { PartnerSectionConfig } from "@/lib/curation";
-import { renderPartnerBody } from "@/lib/partner-section-link";
+import { OPERATOR } from "@/lib/organization";
 
-export function SiteFooter({
-  partnerSection,
-}: {
-  partnerSection: PartnerSectionConfig;
-}) {
+export function SiteFooter() {
   return (
     <footer className="border-t border-black/5 bg-white">
       <div className="mx-auto max-w-6xl px-5 py-10 grid gap-8 md:grid-cols-4">
@@ -36,9 +31,25 @@ export function SiteFooter({
           </ul>
         </div>
         <div className="text-sm">
-          <h3 className="font-semibold mb-3">公式パートナー</h3>
-          <p className="text-ink-muted leading-relaxed whitespace-pre-line">
-            {renderPartnerBody(partnerSection, "text-brand-dark font-semibold hover:underline")}
+          <h3 className="font-semibold mb-3">運営</h3>
+          <p className="text-ink-muted leading-relaxed">
+            3Dひろばは、3Dペン「
+            <a
+              href={OPERATOR.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-dark font-semibold hover:underline"
+            >
+              {OPERATOR.brand}
+            </a>
+            」の日本販売元である{OPERATOR.name}（{OPERATOR.legalName}）が運営しています。
+          </p>
+          <p className="mt-2 text-ink-muted leading-relaxed">
+            ブランド・店舗・教育機関などとの
+            <Link href="/about#partner" className="hover:text-ink underline">
+              パートナーシップ
+            </Link>
+            も歓迎しています。
           </p>
         </div>
         <div className="text-sm">
