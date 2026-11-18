@@ -29,6 +29,7 @@ export function SiteFooter({
           <ul className="space-y-2 text-ink-muted">
             <li><Link href="/" className="hover:text-ink">みんなの「できた！」</Link></li>
             <li><Link href="/sheets" className="hover:text-ink">なぞりシート</Link></li>
+            <li><a href="https://column.3d-hiroba.jp/" className="hover:text-ink">コラム</a></li>
             <li><Link href="/about" className="hover:text-ink">3Dひろばとは</Link></li>
             <li><Link href="/partners" className="hover:text-ink">パートナー</Link></li>
             <li><Link href="/submit" className="hover:text-ink">「できた！」をみせる</Link></li>
