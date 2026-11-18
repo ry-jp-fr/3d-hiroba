@@ -184,9 +184,9 @@ function PrivacyJA() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">11. 連携・パートナーシップ</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">11. 運営者・パートナーシップ</h2>
         <p className="text-gray-700 leading-relaxed">
-          3Dひろばは、Scrib3D（スクリブ3D）と協力して運営されています。詳細情報は、<a href="/partners" className="text-brand hover:underline">パートナーページ</a>をご参照ください。
+          3Dひろばは、3Dペン「スクリブ3D」の日本販売元であるスクリブ3Dジャパン（株式会社Fermento Tokyo）が運営しています。パートナーシップについては、<a href="/partners" className="text-brand hover:underline">パートナーページ</a>をご参照ください。
         </p>
       </section>
     </article>
